@@ -9,15 +9,27 @@
                 >
                     Ajouter une étape
                 </button>
+                
             </div>
 
-            <div v-else >
+            <div v-else class="flex flex-col h-full" >
 
                 <header>
-                    <h1>
+                    <h1 class="text-2xl font-bold text-gray-700 text-center">
                         {{ currentStep?.title }}
                     </h1>
+
                 </header>
+
+                <div class="flex-1" >
+
+                </div>
+
+                <footer class="shadow-lg rounded-md p-4" >
+                    <ClientOnly>
+                        <TextEditor />
+                    </ClientOnly>
+                </footer>
 
             </div>
 
@@ -29,43 +41,21 @@
                     v-for="step in steps"
                     :key="step.id"
                     @click="activateStep(step.id)"
-                    :class="{
-                        'bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-4 cursor-pointer transform transition-all duration-200 hover:scale-103 hover:shadow-xl border-l-4 border-transparent': true,
-                        'border-blue-500 ring-2 ring-blue-500 ring-opacity-50': step.active // Exemple: ajoute une classe si l'étape est active
-                    }"
-                    >
+                    class="p-4 bg-white rounded-lg shadow-md"
+                >
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                        <p class="text-xl font-semibold text-gray-900 dark:text-white mb-1">
-                            {{ step.title }}
-                        </p>
-                        <p class="text-gray-600 dark:text-gray-300 text-sm">
-                            {{ step.description }}
-                        </p>
-                        </div>
-                        <div class="flex space-x-2">
-                        <button
-                            type="button"
-                            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out text-sm"
-                        >
-                            Activer
-                        </button>
-                        <button
-                            class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 ease-in-out text-sm"
-                            @click.stop="removeStep(step.id)"
-                            type="button"
-                        >
-                            Supprimer
-                        </button>
+                            <p class="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                                {{ step.title }}
+                            </p>
+                            <p class="text-gray-600 dark:text-gray-300 text-sm">
+                                {{ step.description }}
+                            </p>
                         </div>
                     </div>
-                    <p class="text-gray-700 dark:text-gray-200 leading-relaxed mt-2 text-base">
-                        {{ step.content }}
-                    </p>
-                    </li>
+                </li>
 
             </ul>
-            <hr>
         </div>
     </div>
 </template>
@@ -102,6 +92,10 @@ function removeStep(id: number) {
 function activateStep(id: number) {
     steps.value.forEach(step => step.active = step.id === id)
 }
+
+
+const languages = ref<string[]>(['Français', 'Anglais', 'Espagnol', 'Allemand', 'Italien'])
+const selectedLanguage = ref<string>('Français')
 
 onMounted(() => {
     const fakeSteps = [{
