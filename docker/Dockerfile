@@ -1,5 +1,6 @@
 # Stage 1: Dependencies
 FROM node:22-alpine
+
 WORKDIR /app
 
 COPY . .
