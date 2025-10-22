@@ -22,7 +22,7 @@
                 </header>
 
                 <div class="flex-1" >
-                    <Carousel mode="read" />
+                    <Carousel mode="read" :initialImages="initialImages" />
                 </div>
 
                 <footer class="shadow-lg h-32 rounded-2xl border border-gray-200 p-4" >
@@ -61,6 +61,21 @@
 </template>
 
 <script setup lang="ts">
+
+const initialImages = ref<CarouselImage[]>([
+    {
+        url: 'https://via.placeholder.com/150',
+        name: 'Image 1'
+    },
+    {
+        url: 'https://via.placeholder.com/150',
+        name: 'Image 2'
+    },
+    {
+        url: 'https://via.placeholder.com/150',
+        name: 'Image 3'
+    }
+])
 
 type Step = {
     id: number

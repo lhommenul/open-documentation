@@ -10,7 +10,7 @@ import Quill from 'quill';
 
 onMounted(() => {
 
-    const quill = new Quill('#editor', {
+    new Quill('#editor', {
         debug: 'info',
         modules: {
             toolbar: true,
