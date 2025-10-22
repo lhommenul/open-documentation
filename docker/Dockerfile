@@ -22,5 +22,5 @@ ENV HOST=0.0.0.0
 ENV PORT=3000
 
 # Start the application
-CMD ["node", "./dist/server/index.mjs"]
+CMD ["node", "./.output/server/index.mjs"]
 
