@@ -22,10 +22,10 @@
                 </header>
 
                 <div class="flex-1" >
-
+                    <Carousel mode="read" />
                 </div>
 
-                <footer class="shadow-lg rounded-md p-4" >
+                <footer class="shadow-lg h-32 rounded-2xl border border-gray-200 p-4" >
                     <ClientOnly>
                         <TextEditor />
                     </ClientOnly>

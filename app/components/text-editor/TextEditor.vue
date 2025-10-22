@@ -1,6 +1,6 @@
 <template>
     <div class="h-full w-full" >   
-        <div id="editor" class="border w-full h-full border-gray-200 rounded-md p-4">
+        <div id="editor" class="w-full h-full">
         </div>
     </div>
 </template>
