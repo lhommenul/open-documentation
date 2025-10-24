@@ -1,18 +1,8 @@
 <template>
     <div class="h-screen w-screen grid grid-cols-3 p-8 gap-8 bg-gray-50" >
-        <div class="bg-white w-full h-full rounded-2xl col-span-2 p-6 shadow">
-            <div v-if="steps.length === 0" >
-                <p class="text-gray-500">Aucune étape</p>
-                <button 
-                    @click="addStep(true)"
-                    class="bg-blue-500 text-white px-4 py-2 rounded-md"
-                >
-                    Ajouter une étape
-                </button>
-                
-            </div>
+        <div class="bg-white w-full h-full rounded-2xl col-span-2 p-6 gap-4 shadow">
 
-            <div v-else class="flex flex-col h-full" >
+            <div class="flex flex-col h-full" >
 
                 <header>
                     <h1 class="text-2xl font-bold text-gray-700 text-center">
@@ -21,15 +11,29 @@
 
                 </header>
 
-                <div class="flex-1" >
-                    <Carousel mode="read" :initialImages="initialImages" />
-                </div>
+                <div class="grid grid-cols-2 grid-rows-2 gap-4 h-full" >
 
-                <footer class="shadow-lg h-32 rounded-2xl border border-gray-200 p-4" >
-                    <ClientOnly>
+                    <div class="col-span-1 row-span-1 bg-gray-100 rounded-2xl hover:shadow" >
+                        <Carousel mode="upload" />
+                    </div>
+
+                    <div class="col-span-1 row-span-1 bg-gray-100 rounded-2xl hover:shadow" >
                         <TextEditor />
-                    </ClientOnly>
-                </footer>
+                    </div>
+
+                    <div class="col-span-1 row-span-1 bg-gray-100 rounded-2xl hover:shadow" >
+                        <ul>
+                            <li v-for="tool in tools" :key="tool.name">
+                                <span class="text-gray-600 dark:text-gray-300 text-sm">
+                                    {{ tool.name }}
+                                </span>
+                            </li>
+                        </ul>
+                        <ToolAdd :tools="tools" @update:tools="updateTools" />
+                    </div>
+
+
+                </div>
 
             </div>
 
@@ -61,21 +65,9 @@
 </template>
 
 <script setup lang="ts">
+import * as z from "zod";
 
-const initialImages = ref<CarouselImage[]>([
-    {
-        url: 'https://via.placeholder.com/150',
-        name: 'Image 1'
-    },
-    {
-        url: 'https://via.placeholder.com/150',
-        name: 'Image 2'
-    },
-    {
-        url: 'https://via.placeholder.com/150',
-        name: 'Image 3'
-    }
-])
+import { Tool } from "~/components/tool/shemas/Tool";
 
 type Step = {
     id: number
@@ -89,28 +81,14 @@ const steps = ref<Step[]>([])
 
 const currentStep = computed(()=> steps.value.find(step => step.active))
 
-function addStep( activeStep = false ) {
-
-    steps.value.push({
-        id: steps.value.length + 1,
-        title: 'Titre de l\'étape',
-        description: 'Description de l\'étape',
-        content: 'Contenu de l\'étape',
-        active: activeStep
-    })
-}
-
-function removeStep(id: number) {
-    steps.value = steps.value.filter(step => step.id !== id)
-}
-
 function activateStep(id: number) {
     steps.value.forEach(step => step.active = step.id === id)
 }
 
-
-const languages = ref<string[]>(['Français', 'Anglais', 'Espagnol', 'Allemand', 'Italien'])
-const selectedLanguage = ref<string>('Français')
+const tools = ref<Tool[]>([])
+function updateTools(newTools: Tool[]) {
+    tools.value = newTools
+}
 
 onMounted(() => {
     const fakeSteps = [{
@@ -122,6 +100,7 @@ onMounted(() => {
     }]
 
     steps.value = fakeSteps
+    
 })
 
 </script>
