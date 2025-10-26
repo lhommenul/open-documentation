@@ -1,0 +1,1 @@
+export type Turple<T> = [ error: null, data: T ] | [ error: Error, data: null ];
