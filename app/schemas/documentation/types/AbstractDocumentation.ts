@@ -4,9 +4,16 @@ import type { AbstractTool } from '~/schemas/tool/types/AbstractTool'
 import type { AbstractPicture } from '~/schemas/pictures/types/AbstractPicture'
 
 export interface AbstractDocumentation {
-    load: ( cid: CID ) => Promise<Turple<string>>
-    new: () => Promise<Turple<CID>>
+    new: ( params?: {
+        parentCID?: CID
+        documentationCID?: CID // If you provide a documentationCID i will try to pull it
+    } ) => Promise<Turple<CID>>
     save: () => Promise<Turple<CID>>
-    setTools: ( tools: AbstractTool[] ) => Promise<Turple<boolean>>
-    setPictures: ( pictures: AbstractPicture[] ) => Promise<Turple<boolean>>
+    getCID: () => CID | null
+    getPictures: () => AbstractPicture[]
+    getTools: () => AbstractTool[]
+    getContent: () => string | null
+    setContent: ( content: string ) => void
+    setPictures: ( pictures: AbstractPicture[] ) => void
+    setTools: ( tools: AbstractTool[] ) => void
 }

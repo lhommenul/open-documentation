@@ -6,4 +6,5 @@ export class OpenDocumentationVersion0001 implements AbstractOpenDocumentation {
     createDocumentation(): AbstractDocumentation {
         return new DocumentationVersion0001()
     }
+    
 }

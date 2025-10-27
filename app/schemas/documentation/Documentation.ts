@@ -7,34 +7,47 @@ import type { AbstractTool } from '../tool/types/AbstractTool'
 export class DocumentationVersion0001 implements AbstractDocumentation {
     private tools: AbstractTool[] = []
     private pictures: AbstractPicture[] = []
-    private currentCid: CID | null = null
-    private content: string = ''
+    private currentCID: CID | null = null
+    private content: string | null = null
+    private parentCID: CID | null = null
 
-    async load(cid: CID): Promise<Turple<string>> {
-        this.currentCid = cid
-        this.content = `# Fake documentation\n\nLoaded from CID: ${cid}`
-        return [null, this.content]
-    }
-
-    async new(): Promise<Turple<CID>> {
+    // Create a new documentation / if you provide a DocumentCID i will try to pull it
+    async new( params ): Promise<Turple<CID>> {
 
         return [null, "cid"]
 
     }
 
     async save(): Promise<Turple<CID>> {
-        const fakeSavedCid: CID = this.currentCid ?? 'bafy-save-0001'
-        return [null, fakeSavedCid]
+        return [null, "cid"]
     }
 
-    async setTools(tools: AbstractTool[]): Promise<Turple<boolean>> {
-        this.tools = tools
-        return [null, true]
+    getCID(): CID | null {
+        return this.currentCID
     }
 
-    async setPictures(pictures: AbstractPicture[]): Promise<Turple<boolean>> {
+    getPictures(): AbstractPicture[] {
+        return this.pictures
+    }
+
+    setPictures( pictures: AbstractPicture[] ): void {
         this.pictures = pictures
-        return [null, true]
+    }
+
+    getTools(): AbstractTool[] {
+        return this.tools
+    }
+
+    setTools( tools: AbstractTool[] ): void {
+        this.tools = tools
+    }
+
+    getContent(): string | null {
+        return this.content
+    }
+
+    setContent( content: string ): void {
+        this.content = content
     }
 
 }
