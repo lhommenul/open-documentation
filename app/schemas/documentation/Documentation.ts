@@ -4,6 +4,7 @@ import type { Turple } from '~/shared/types/Turple'
 import type { AbstractPicture } from '../picture/types/AbstractPicture'
 import type { AbstractTool } from '../tool/types/AbstractTool'
 import { Picture } from '~/schemas/picture/Picture'
+import { Tool } from '../tool/Tool'
 
 export class DocumentationVersion0001 implements AbstractDocumentation {
     private tools: AbstractTool[] = []
@@ -49,8 +50,17 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
         return this.tools
     }
 
-    setTools( tools: AbstractTool[] ): void {
-        this.tools = tools
+    addTool( toolName: string ): void {
+
+        const tool = new Tool()
+
+        const response = tool.new( toolName )
+
+        if ( !response[0] ) {
+            this.tools.push(tool)
+        }
+
+        return response;
     }
 
     getContent(): string | null {

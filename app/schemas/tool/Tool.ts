@@ -1,14 +1,20 @@
+import type { Turple } from "~/shared/types/Turple";
 import type { AbstractTool } from "./types/AbstractTool";
 
 export class Tool implements AbstractTool {
-    private name: string = '';
 
-    getName(): string {
-        return this.name;
+    private toolName: string = '';
+
+    new( toolName:string ): Turple<boolean> {
+     
+        this.toolName = toolName;
+
+        return [null, true]
+
     }
 
-    setName(name: string): void {
-        this.name = name;
+    getName(): string {
+        return this.toolName;
     }
     
 }

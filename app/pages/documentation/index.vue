@@ -109,7 +109,7 @@ const onUpload = async (event: any) => {
         return;
     }
 
-    const [ error, pictureMetaData ] = await documentation.addPicture(file)
+    const [ error ] = await documentation.addPicture(file)
 
     if ( error ) {
         toast.add({
