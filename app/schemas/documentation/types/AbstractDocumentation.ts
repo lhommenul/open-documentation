@@ -1,7 +1,7 @@
 import type { CID } from '../../ipfs/Ipfs'
 import type { Turple } from '~/shared/types/Turple'
 import type { AbstractTool } from '~/schemas/tool/types/AbstractTool'
-import type { AbstractPicture } from '~/schemas/pictures/types/AbstractPicture'
+import type { AbstractPicture } from '~/schemas/picture/types/AbstractPicture'
 
 export interface AbstractDocumentation {
     new: ( params?: {

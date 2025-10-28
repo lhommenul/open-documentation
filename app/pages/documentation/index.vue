@@ -1,31 +1,90 @@
 <template>
-    <div>
+    <div class="h-screen w-screen flex flex-col gap-4" >
 
-        <header>
-            <h1>Documentation</h1>
+        <header class="col-span-1 row-span-1 bg-white-500 h-20 shadow-lg flex items-center px-8" >
+            <h1 class="text-2xl font-bold" >Documentation</h1>
+            
         </header>
 
-        <main class="h-screen w-screen flex justify-center items-center" >
+        <main class="h-full w-full flex flex-row" >
 
-            <div>
+            <div 
+                class="w-6/8 grid grid-cols-2 gap-4" 
+            >
+                <div class="col-span-1" >
+                    <FileUpload name="demo[]" url="/api/upload" @upload="onAdvancedUpload($event)" :multiple="true" accept="image/*" :maxFileSize="1000000">
+                        <template #empty>
+                            <span>Drag and drop files to here to upload.</span>
+                        </template>
+                    </FileUpload>
+                </div>
 
+                <div class="col-span-1 flex flex-col gap-4" >
+                    Ajouter des outils
+                    <ul>
+                        <li v-for="tool in tools" :key="tool.value" >
+                            {{ tool.label }}
+                            <Button icon="pi pi-times" @click="removeTool(tool.value)" label="Supprimer" />
+                        </li>
+                    </ul>
+
+                    <InputText type="text" v-model="toolName" placeholder="Nom de l'outil" @keydown.enter="addTool" />
+                </div>
+
+                <div class="col-span-1" >
+                    
+                    <Editor v-model="activeDocumentContent" editorStyle="height: 320px" />
+
+                </div>
             </div>
 
-            <div>
-                <PanelMenu :model="items" />
+            <div class="col-span-1" >
+                <PanelMenu :model="documents" />
             </div>
 
         </main>
+
+        <footer class="h-20 w-full bg-white-500 shadow-lg flex items-center px-8" >
+            FOOTER
+        </footer>
 
     </div>
 </template>
 
 <script setup lang="ts">
+import type { AbstractDocumentation } from '~/schemas/documentation/types/AbstractDocumentation';
 const { newDocumentation, isLoading } = useDocumentation();
 
+const documents = ref([{
+    label: 'Document 1',
+    icon: 'pi pi-file',
+    items: []
+}]);
 
+const activeDocument = ref<AbstractDocumentation | null>(null);
+
+const activeDocumentContent = computed({
+    get: () => {
+        return activeDocument.value?.getContent() ?? '';
+    },
+    set: (content: string) => {
+        activeDocument.value?.setContent(content);
+    }
+});
+
+const tools = ref([]);
+const toolName = ref<string>('');
+
+const addTool = () => {
+    tools.value.push({
+        label: toolName.value,
+        value: toolName.value
+    });
+    toolName.value = '';
+}
 
 onMounted(async () => {
+
     const cid = await newDocumentation();
     if ( cid ) {
         console.log(cid);

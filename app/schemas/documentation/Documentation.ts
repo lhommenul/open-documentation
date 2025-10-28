@@ -1,7 +1,7 @@
 import type { AbstractDocumentation } from './types/AbstractDocumentation'
 import type { CID } from '../ipfs/Ipfs'
 import type { Turple } from '~/shared/types/Turple'
-import type { AbstractPicture } from '../pictures/types/AbstractPicture'
+import type { AbstractPicture } from '../picture/types/AbstractPicture'
 import type { AbstractTool } from '../tool/types/AbstractTool'
 
 export class DocumentationVersion0001 implements AbstractDocumentation {
@@ -12,7 +12,7 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
     private parentCID: CID | null = null
 
     // Create a new documentation / if you provide a DocumentCID i will try to pull it
-    async new( params ): Promise<Turple<CID>> {
+    async new(): Promise<Turple<CID>> {
 
         return [null, "cid"]
 
