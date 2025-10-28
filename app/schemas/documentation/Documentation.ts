@@ -3,6 +3,7 @@ import type { CID } from '../ipfs/Ipfs'
 import type { Turple } from '~/shared/types/Turple'
 import type { AbstractPicture } from '../picture/types/AbstractPicture'
 import type { AbstractTool } from '../tool/types/AbstractTool'
+import { Picture } from '~/schemas/picture/Picture'
 
 export class DocumentationVersion0001 implements AbstractDocumentation {
     private tools: AbstractTool[] = []
@@ -30,8 +31,18 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
         return this.pictures
     }
 
-    setPictures( pictures: AbstractPicture[] ): void {
-        this.pictures = pictures
+    async addPicture( file: File ) {
+        
+        const picture = new Picture()
+
+        const pictureUploadResponse = await picture.upload( file )
+
+        if ( !pictureUploadResponse[0] ) {
+            this.pictures.push(picture)
+        }
+
+        return pictureUploadResponse
+
     }
 
     getTools(): AbstractTool[] {

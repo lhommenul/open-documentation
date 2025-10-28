@@ -12,7 +12,16 @@
                 class="w-6/8 grid grid-cols-2 gap-4" 
             >
                 <div class="col-span-1" >
-                    <FileUpload name="demo[]" url="/api/upload" @upload="onAdvancedUpload($event)" :multiple="true" accept="image/*" :maxFileSize="1000000">
+                    <FileUpload 
+                        @select="onUpload" 
+                        customUpload 
+                        :multiple="true" 
+                        auto
+                        accept="image/*" 
+                        :maxFileSize="1000000"
+                        :showUploadButton="false"
+                        :chooseLabel="'Ajouter des images'"
+                    >
                         <template #empty>
                             <span>Drag and drop files to here to upload.</span>
                         </template>
@@ -53,7 +62,11 @@
 
 <script setup lang="ts">
 import type { AbstractDocumentation } from '~/schemas/documentation/types/AbstractDocumentation';
-const { newDocumentation, isLoading } = useDocumentation();
+import { Picture } from '~/schemas/picture/Picture';
+import { useToast } from 'primevue/usetoast';
+import { DocumentationVersion0001 } from '~/schemas/documentation/Documentation';
+
+const toast = useToast();
 
 const documents = ref([{
     label: 'Document 1',
@@ -78,16 +91,48 @@ const toolName = ref<string>('');
 const addTool = () => {
     tools.value.push({
         label: toolName.value,
-        value: toolName.value
+        value: toolName
     });
-    toolName.value = '';
 }
 
-onMounted(async () => {
+const onUpload = async (event: any) => {
 
-    const cid = await newDocumentation();
-    if ( cid ) {
-        console.log(cid);
+    const file = event.files[0];
+
+    if ( !file ) {
+        toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Fichier non trouvé',
+            life: 3000
+        });
+        return;
     }
+
+    const [ error, pictureMetaData ] = await documentation.addPicture(file)
+
+    if ( error ) {
+        toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: error.message,
+            life: 3000
+        });
+    }
+    
+    toast.add({
+        severity: 'success',
+        summary: 'Succès',
+        detail: 'Images ajoutées avec succès',
+        life: 3000
+    });
+
+}
+
+const documentation = new DocumentationVersion0001();
+
+onMounted(async () => {
+    
 });
+
 </script>

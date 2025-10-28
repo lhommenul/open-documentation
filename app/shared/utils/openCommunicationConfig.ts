@@ -1,4 +1,14 @@
-const openCommunicationApiUrl = process.env.OPEN_COMMUNICATION_API_URL as string;
-const openCommunicationApiPort = process.env.OPEN_COMMUNICATION_API_PORT as string;
+import { useRuntimeConfig } from '#imports';
 
-export const OPEN_COMMUNICATION_API_URL = new URL(openCommunicationApiUrl + openCommunicationApiPort ? ':' + openCommunicationApiPort : '');
+export function getOpenCommunicationApiUrl(): string {
+    const config = useRuntimeConfig();
+    const baseUrl = (config.public?.openCommunicationApiUrl as string | undefined) ?? '';
+    if (!baseUrl) {
+        throw new Error('Missing public runtime config: openCommunicationApiUrl');
+    }
+    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+}
+
+export function buildOpenCommunicationUrl(path: string): string {
+    return new URL(path, getOpenCommunicationApiUrl()).toString();
+}

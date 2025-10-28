@@ -1,39 +1,39 @@
 import type { AbstractPicture } from "./types/AbstractPicture";
 import type { CID } from "../ipfs/Ipfs";
 import type { Turple } from "~/shared/types/Turple";
+import { uploadImage, type UploadImageResponse } from "~/api/uploadImage";
 
 export class Picture implements AbstractPicture {
 
-    private name: string = '';
     private file: File | null = null;
-    private cid: CID | null = null;
-    private parentCID: CID | null = null;
-    private url: string | null = null;
 
-    new( file: File, parentCID: CID ): Turple<CID> {
-        return [null, "cid"];
-    }
+    // Upload images url
+    public uploadResponse: UploadImageResponse | null = null;
 
-    upload(): Promise<Turple<CID>> {
+    async upload( file: File ): Promise<Turple<UploadImageResponse>> {
 
-        if ( !this.file ) {
-            return [new Error("File not found"), null];
+        if ( !file ) {
+            return Promise.resolve([new Error("File not found"), null]);
         }
 
-        return uploadImage(this.file);
+        const uploadImageResponse = await uploadImage(file);
+
+        if ( uploadImageResponse[0] === null ) {
+            this.uploadResponse = uploadImageResponse[1];
+        }
+
+        return uploadImageResponse;
 
     }
 
-    getPreviewURL(): Turple<string>{
+    getFilename() {
 
-        if ( !this.file ) {
-            return [new Error("File not found"), null];
-        }
+        return this.uploadResponse?.filename;
 
-        const url = URL.createObjectURL(this.file);
+    }
 
-        return [null, url];
-
+    getUrl() {
+        return this.uploadResponse?.url
     }
 
 }
