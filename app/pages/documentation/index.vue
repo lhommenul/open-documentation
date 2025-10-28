@@ -30,14 +30,14 @@
 
                 <div class="col-span-1 flex flex-col gap-4" >
                     Ajouter des outils
-                    <ul>
-                        <li v-for="tool in tools" :key="tool.value" >
-                            {{ tool.label }}
-                            <Button icon="pi pi-times" @click="removeTool(tool.value)" label="Supprimer" />
+                    <ul v-if="activeDocumentation" >
+                        <li v-for="(tool,index) in activeDocumentation?.getTools()" :key="index" >
+                            {{ tool.getName() }}
+                            <Button icon="pi pi-times" @click="activeDocumentation?.removeTool(tool.getName())" label="Supprimer" />
                         </li>
                     </ul>
 
-                    <InputText type="text" v-model="toolName" placeholder="Nom de l'outil" @keydown.enter="addTool" />
+                    <InputText type="text" v-model="toolName" placeholder="Nom de l'outil" @keydown.enter="handleAddTool" />
                 </div>
 
                 <div class="col-span-1" >
@@ -47,8 +47,10 @@
                 </div>
             </div>
 
-            <div class="col-span-1" >
-                <PanelMenu :model="documents" />
+            <div class="col-span-1 gap-8 flex flex-col" >
+                <PanelMenu :model="panelMenuItems" />
+
+                <Button label="Ajouter une documentation" @click="addNewDocumentation"  />
             </div>
 
         </main>
@@ -62,38 +64,45 @@
 
 <script setup lang="ts">
 import type { AbstractDocumentation } from '~/schemas/documentation/types/AbstractDocumentation';
-import { Picture } from '~/schemas/picture/Picture';
 import { useToast } from 'primevue/usetoast';
 import { DocumentationVersion0001 } from '~/schemas/documentation/Documentation';
 
 const toast = useToast();
 
-const documents = ref([{
-    label: 'Document 1',
-    icon: 'pi pi-file',
-    items: []
-}]);
+const activeDocumentID = ref();
 
-const activeDocument = ref<AbstractDocumentation | null>(null);
+const documentations = ref<AbstractDocumentation[]>([]);
+
+const activeDocumentation = computed(()=> documentations.value.find( doc => doc.getID() === activeDocumentID.value ) )
+
+const panelMenuItems = computed(()=>{
+    return documentations.value.map( doc => {
+        return {
+            label: doc.getID(),
+            command: () => {
+                activeDocumentID.value = doc.getID()
+            }
+        }
+    })
+})
 
 const activeDocumentContent = computed({
     get: () => {
-        return activeDocument.value?.getContent() ?? '';
+        return activeDocumentation.value?.getContent() ?? '';
     },
     set: (content: string) => {
-        activeDocument.value?.setContent(content);
+        activeDocumentation.value?.setContent(content);
     }
 });
 
-const tools = ref([]);
-const toolName = ref<string>('');
+const handleAddTool = () => {
 
-const addTool = () => {
-    tools.value.push({
-        label: toolName.value,
-        value: toolName
-    });
+    activeDocumentation.value?.addTool(toolName.value)
+
+    toolName.value = '';
 }
+
+const toolName = ref<string>('');
 
 const onUpload = async (event: any) => {
 
@@ -109,7 +118,17 @@ const onUpload = async (event: any) => {
         return;
     }
 
-    const [ error ] = await documentation.addPicture(file)
+    if ( !activeDocumentation.value ) {
+        toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Aucun document actif',
+            life: 3000
+        });
+        return
+    }
+
+    const [ error ] = await activeDocumentation.value?.addPicture(file)
 
     if ( error ) {
         toast.add({
@@ -129,10 +148,29 @@ const onUpload = async (event: any) => {
 
 }
 
-const documentation = new DocumentationVersion0001();
+
+const addNewDocumentation = async () => {
+
+    const documentation = new DocumentationVersion0001();
+
+    const [ error, documentID ] = await documentation.new()
+    
+    documentations.value.push(documentation);
+
+    activeDocumentID.value = documentID;
+    
+}
 
 onMounted(async () => {
+
+    const documentation = new DocumentationVersion0001();
+
+    const [ error, documentID ] = await documentation.new()
     
+    documentations.value.push(documentation);
+
+    activeDocumentID.value = documentID;
+
 });
 
 </script>

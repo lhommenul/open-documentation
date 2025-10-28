@@ -4,16 +4,14 @@ import type { AbstractTool } from '~/schemas/tool/types/AbstractTool'
 import type { AbstractPicture } from '~/schemas/picture/types/AbstractPicture'
 
 export interface AbstractDocumentation {
-    new: ( params?: {
-        parentCID?: CID
-        documentationCID?: CID // If you provide a documentationCID i will try to pull it
-    } ) => Promise<Turple<CID>>
+    new: () => Promise<Turple<CID>>
     save: () => Promise<Turple<CID>>
-    getCID: () => CID | null
+    getID: () => CID | null
     getPictures: () => AbstractPicture[]
+    addPicture: ( file: File ) => Promise<Turple<AbstractPicture>>
     getTools: () => AbstractTool[]
+    removeTool: (toolName: string) => void
     getContent: () => string | null
     setContent: ( content: string ) => void
-    setPictures: ( pictures: AbstractPicture[] ) => void
-    setTools: ( tools: AbstractTool[] ) => void
+    addTool: ( toolName: string ) => Turple<boolean>
 }

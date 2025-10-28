@@ -9,14 +9,14 @@ import { Tool } from '../tool/Tool'
 export class DocumentationVersion0001 implements AbstractDocumentation {
     private tools: AbstractTool[] = []
     private pictures: AbstractPicture[] = []
-    private currentCID: CID | null = null
+    private documentID: CID | null = null
     private content: string | null = null
-    private parentCID: CID | null = null
 
-    // Create a new documentation / if you provide a DocumentCID i will try to pull it
     async new(): Promise<Turple<CID>> {
 
-        return [null, "cid"]
+        this.documentID = crypto.randomUUID()
+
+        return [null, this.documentID]
 
     }
 
@@ -24,8 +24,8 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
         return [null, "cid"]
     }
 
-    getCID(): CID | null {
-        return this.currentCID
+    getID(): CID | null {
+        return this.documentID
     }
 
     getPictures(): AbstractPicture[] {
@@ -47,20 +47,30 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
     }
 
     getTools(): AbstractTool[] {
+        console.log(this.tools)
         return this.tools
     }
 
-    addTool( toolName: string ): void {
+    addTool( toolName: string ): Turple<boolean> {
 
         const tool = new Tool()
 
         const response = tool.new( toolName )
 
         if ( !response[0] ) {
+
+            const normalizeToolName = tool.getName();
+
             this.tools.push(tool)
         }
 
         return response;
+    }
+
+    removeTool( toolName: string ): void {
+
+        this.tools = this.tools.filter( tool => tool.getName() === toolName );
+
     }
 
     getContent(): string | null {
