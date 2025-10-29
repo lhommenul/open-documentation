@@ -6,102 +6,136 @@
             
         </header>
 
-        <main class="h-full w-full grid grid-cols-4 gap-4" >
+        <main class="h-full w-full grid grid-cols-4 gap-4 px-8 py-4" >
 
-            <div 
-                class="col-span-3 grid grid-cols-2 gap-4" 
-            >
-                <div class="col-span-1" >
-                    <FileUpload 
-                        @select="onUpload" 
-                        customUpload 
-                        :multiple="true" 
-                        accept="image/*" 
-                        :maxFileSize="1000000"
-                        :showUploadButton="false"
-                        :chooseLabel="'Ajouter des images'"
-                    >
-                        <template #content="{ files }">
-                            <ul>
-                                <li v-for="file in computeUploadedPicturesStatus(files)" class="flex flex-row gap-4 items-center" >
-                                    <img :src="file?.objectURL" alt="picture" >
-                                    {{ file.rawFilename }}
-                                    <Badge :value="file.uploadStatus" severity="secondary"></Badge>
-                                </li>
-                            </ul>
-                        </template>
-                    </FileUpload>
+            <div class="col-span-3 h-full flex flex-col" >
+
+                <div class="" >
+                    <Stepper value="1" >
+                        <StepItem value="1">
+                            <Step>Header I</Step>
+                            <StepPanel v-slot="{ activateCallback }">
+                                <div class="col-span-1" >
+                                    <FileUpload 
+                                        @select="onUpload" 
+                                        customUpload 
+                                        :multiple="true" 
+                                        accept="image/*" 
+                                        :maxFileSize="1000000"
+                                        :showUploadButton="false"
+                                        :chooseLabel="'Ajouter des images'"
+                                    >
+                                        <template #content="{ files }">
+                                            <ul>
+                                                <li v-for="file in computeUploadedPicturesStatus(files)" class="flex flex-row gap-4 items-center" >
+                                                    <img :src="file?.objectURL" alt="picture" >
+                                                    {{ file.rawFilename }}
+                                                    <Badge :value="file.uploadStatus" severity="secondary"></Badge>
+                                                </li>
+                                            </ul>
+                                        </template>
+                                    </FileUpload>
+                                </div>
+
+                                <div class="col-span-1" >
+                                    
+                                    <Editor v-model="activeDocumentContent" editorStyle="height: 320px" />
+
+                                </div>
+                            </StepPanel>
+                        </StepItem>
+                        <StepItem value="2">
+                            <Step>Header II</Step>
+                            <StepPanel v-slot="{ activateCallback }">
+                                <div class="flex flex-col h-48">
+                                    <div class="border-2 border-dashed border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-950 flex-auto flex justify-center items-center font-medium">Content II</div>
+                                </div>
+                                <div class="flex py-6 gap-2">
+                                    <Button label="Back" severity="secondary" @click="activateCallback('1')" />
+                                    <Button label="Next" @click="activateCallback('3')" />
+                                </div>
+                            </StepPanel>
+                        </StepItem>
+                        <StepItem value="3">
+                            <Step>Header III</Step>
+                            <StepPanel v-slot="{ activateCallback }">
+                                <div class="flex flex-col h-48">
+                                    <div class="border-2 border-dashed border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-950 flex-auto flex justify-center items-center font-medium">Content III</div>
+                                </div>
+                                <div class="py-6">
+                                    <Button label="Back" severity="secondary" @click="activateCallback('2')" />
+                                </div>
+                            </StepPanel>
+                        </StepItem>
+                    </Stepper>
                 </div>
 
-                <div class="col-span-1" >
-                    
-                    <Editor v-model="activeDocumentContent" editorStyle="height: 320px" />
+                <footer class="h-20 w-full bg-white-500 shadow-lg flex items-center px-8 mt-auto" >
+                    <Paginator :rows="10" :totalRecords="120" :rowsPerPageOptions="[10, 20, 30]"></Paginator>
+                </footer>
 
-                </div>
             </div>
 
             <!-- PANEL -->
-            <Accordion value="0" expandIcon="pi pi-plus" collapseIcon="pi pi-minus" >
-                <AccordionPanel value="0">
-                    <AccordionHeader>
-                        <span class="flex items-center gap-2 w-full">
-                            <i class="pi pi-hammer" style="color: slateblue"></i>
-                            <span class="font-bold whitespace-nowrap">Outils</span> 
-                            <Badge :value="toolsCount" class="ml-auto mr-2" />
-                        </span>
-                    </AccordionHeader>
-                    <AccordionContent>
-                        <InputText type="text" v-model="toolName" placeholder="Nom de l'outil" @keydown.enter="handleAddTool" />
-                        <ul v-if="activeDocumentation" class="flex flex-col gap-2 mt-2" >
-                            <li v-for="(tool,index) in activeDocumentation?.getTools()" :key="index" >
-                                {{ tool.getName() }}
-                                <Button icon="pi pi-trash" @click="activeDocumentation?.removeTool(tool.getName())" />
-                            </li>
-                        </ul>
-                    </AccordionContent>
-                </AccordionPanel>
-                <AccordionPanel value="1">
-                    <AccordionHeader>
-                        <span class="flex items-center gap-2 w-full">
-                            <i class="pi pi-images" style="color: slateblue"></i>
-                            <span class="font-bold whitespace-nowrap">Images</span> 
-                            <Badge :value="activeDocumentation?.getPictures().length ?? 0" class="ml-auto mr-2" />
-                        </span>
-                    </AccordionHeader>
-                    <AccordionContent>
-                        <ul v-if="activeDocumentation" class="flex flex-col gap-2 mt-2" >
-                            <li v-for="(picture,index) in activeDocumentation?.getPictures()" :key="index" class="flex flex-row gap-2 items-center" >
-                                <img :src="picture.getObjectURL()" alt="picture" />
-                                <Button icon="pi pi-trash" @click="activeDocumentation?.removePicture(picture.getRawFilename())" />
-                            </li>
-                        </ul>
-                    </AccordionContent>
-                </AccordionPanel>
-                <AccordionPanel value="2">
-                    <AccordionHeader>
-                        <span class="flex items-center gap-2 w-full">
-                            <i class="pi pi-sort-numeric-down-alt" style="color: slateblue"></i>
-                            <span class="font-bold whitespace-nowrap">Etapes</span> 
-                            <Badge :value="panelMenuItems.length" class="ml-auto mr-2" />
-                        </span>
-                    </AccordionHeader>
-                    <AccordionContent>
-                        <Button label="Ajouter une documentation" @click="addNewDocumentation"  />
-                        <ul v-if="activeDocumentation" >
-                            <li v-for="(document,index) in panelMenuItems" :key="index" @click="activeDocumentID = document.label   " >
-                                <p><span class="font-bold" >{{ document.order + 1 }}.</span>{{ document.label }}</p>
-                                <Button icon="pi pi-trash" @click="activeDocumentation?.removeDocument(document.label)" />
-                            </li>
-                        </ul>
-                    </AccordionContent>
-                </AccordionPanel>
-            </Accordion>
+            <div class="shadow-lg h-full" >
+                <Accordion value="0" expandIcon="pi pi-plus" collapseIcon="pi pi-minus" >
+                    <AccordionPanel value="0">
+                        <AccordionHeader>
+                            <span class="flex items-center gap-2 w-full">
+                                <i class="pi pi-hammer" style="color: slateblue"></i>
+                                <span class="font-bold whitespace-nowrap">Outils</span> 
+                                <Badge :value="toolsCount" class="ml-auto mr-2" />
+                            </span>
+                        </AccordionHeader>
+                        <AccordionContent>
+                            <InputText type="text" v-model="toolName" placeholder="Nom de l'outil" @keydown.enter="handleAddTool" />
+                            <ul v-if="activeDocumentation" class="flex flex-col gap-2 mt-2" >
+                                <li v-for="(tool,index) in activeDocumentation?.getTools()" :key="index" >
+                                    {{ tool.getName() }}
+                                    <Button icon="pi pi-trash" @click="activeDocumentation?.removeTool(tool.getName())" />
+                                </li>
+                            </ul>
+                        </AccordionContent>
+                    </AccordionPanel>
+                    <AccordionPanel value="1">
+                        <AccordionHeader>
+                            <span class="flex items-center gap-2 w-full">
+                                <i class="pi pi-images" style="color: slateblue"></i>
+                                <span class="font-bold whitespace-nowrap">Images</span> 
+                                <Badge :value="activeDocumentation?.getPictures().length ?? 0" class="ml-auto mr-2" />
+                            </span>
+                        </AccordionHeader>
+                        <AccordionContent>
+                            <ul v-if="activeDocumentation" class="flex flex-col gap-2 mt-2" >
+                                <li v-for="(picture,index) in activeDocumentation?.getPictures()" :key="index" class="flex flex-row gap-2 items-center" >
+                                    <img :src="picture.getObjectURL()" alt="picture" />
+                                    <Button icon="pi pi-trash" @click="activeDocumentation?.removePicture(picture.getRawFilename())" />
+                                </li>
+                            </ul>
+                        </AccordionContent>
+                    </AccordionPanel>
+                    <AccordionPanel value="2">
+                        <AccordionHeader>
+                            <span class="flex items-center gap-2 w-full">
+                                <i class="pi pi-sort-numeric-down-alt" style="color: slateblue"></i>
+                                <span class="font-bold whitespace-nowrap">Etapes</span> 
+                                <Badge :value="panelMenuItems.length" class="ml-auto mr-2" />
+                            </span>
+                        </AccordionHeader>
+                        <AccordionContent>
+                            <Button label="Ajouter une documentation" @click="addNewDocumentation"  />
+                            <ul v-if="activeDocumentation" >
+                                <li v-for="(document,index) in panelMenuItems" :key="index" @click="activeDocumentID = document.label   " >
+                                    <p><span class="font-bold" >{{ document.order + 1 }}.</span>{{ document.label }}</p>
+                                    <Button icon="pi pi-trash" @click="activeDocumentation?.removeDocument(document.label)" />
+                                </li>
+                            </ul>
+                        </AccordionContent>
+                    </AccordionPanel>
+                </Accordion>
+            </div>
 
         </main>
-
-        <footer class="h-20 w-full bg-white-500 shadow-lg flex items-center px-8" >
-            FOOTER
-        </footer>
 
     </div>
 </template>
