@@ -641,9 +641,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-input {
-    transition: all 0.2s;
-}
+
 
 [draggable="true"] {
     cursor: move;
