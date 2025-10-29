@@ -6,10 +6,10 @@
             
         </header>
 
-        <main class="h-full w-full flex flex-row" >
+        <main class="h-full w-full grid grid-cols-4 gap-4" >
 
             <div 
-                class="w-6/8 grid grid-cols-2 gap-4" 
+                class="col-span-3 grid grid-cols-2 gap-4" 
             >
                 <div class="col-span-1" >
                     <FileUpload 
@@ -21,9 +21,6 @@
                         :showUploadButton="false"
                         :chooseLabel="'Ajouter des images'"
                     >
-                        <template #empty>
-                            <span>Drag and drop files to here to upload.</span>
-                        </template>
                         <template #content="{ files }">
                             <ul>
                                 <li v-for="file in computeUploadedPicturesStatus(files)" class="flex flex-row gap-4 items-center" >
@@ -36,18 +33,6 @@
                     </FileUpload>
                 </div>
 
-                <div class="col-span-1 flex flex-col gap-4" >
-                    Ajouter des outils
-                    <ul v-if="activeDocumentation" >
-                        <li v-for="(tool,index) in activeDocumentation?.getTools()" :key="index" >
-                            {{ tool.getName() }}
-                            <Button icon="pi pi-times" @click="activeDocumentation?.removeTool(tool.getName())" label="Supprimer" />
-                        </li>
-                    </ul>
-
-                    <InputText type="text" v-model="toolName" placeholder="Nom de l'outil" @keydown.enter="handleAddTool" />
-                </div>
-
                 <div class="col-span-1" >
                     
                     <Editor v-model="activeDocumentContent" editorStyle="height: 320px" />
@@ -55,11 +40,62 @@
                 </div>
             </div>
 
-            <div class="col-span-1 gap-8 flex flex-col" >
-                <PanelMenu :model="panelMenuItems" />
-
-                <Button label="Ajouter une documentation" @click="addNewDocumentation"  />
-            </div>
+            <!-- PANEL -->
+            <Accordion value="0" expandIcon="pi pi-plus" collapseIcon="pi pi-minus" >
+                <AccordionPanel value="0">
+                    <AccordionHeader>
+                        <span class="flex items-center gap-2 w-full">
+                            <i class="pi pi-hammer" style="color: slateblue"></i>
+                            <span class="font-bold whitespace-nowrap">Outils</span> 
+                            <Badge :value="toolsCount" class="ml-auto mr-2" />
+                        </span>
+                    </AccordionHeader>
+                    <AccordionContent>
+                        <InputText type="text" v-model="toolName" placeholder="Nom de l'outil" @keydown.enter="handleAddTool" />
+                        <ul v-if="activeDocumentation" class="flex flex-col gap-2 mt-2" >
+                            <li v-for="(tool,index) in activeDocumentation?.getTools()" :key="index" >
+                                {{ tool.getName() }}
+                                <Button icon="pi pi-trash" @click="activeDocumentation?.removeTool(tool.getName())" />
+                            </li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionPanel>
+                <AccordionPanel value="1">
+                    <AccordionHeader>
+                        <span class="flex items-center gap-2 w-full">
+                            <i class="pi pi-images" style="color: slateblue"></i>
+                            <span class="font-bold whitespace-nowrap">Images</span> 
+                            <Badge :value="activeDocumentation?.getPictures().length ?? 0" class="ml-auto mr-2" />
+                        </span>
+                    </AccordionHeader>
+                    <AccordionContent>
+                        <ul v-if="activeDocumentation" class="flex flex-col gap-2 mt-2" >
+                            <li v-for="(picture,index) in activeDocumentation?.getPictures()" :key="index" class="flex flex-row gap-2 items-center" >
+                                <img :src="picture.getObjectURL()" alt="picture" />
+                                <Button icon="pi pi-trash" @click="activeDocumentation?.removePicture(picture.getRawFilename())" />
+                            </li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionPanel>
+                <AccordionPanel value="2">
+                    <AccordionHeader>
+                        <span class="flex items-center gap-2 w-full">
+                            <i class="pi pi-sort-numeric-down-alt" style="color: slateblue"></i>
+                            <span class="font-bold whitespace-nowrap">Etapes</span> 
+                            <Badge :value="panelMenuItems.length" class="ml-auto mr-2" />
+                        </span>
+                    </AccordionHeader>
+                    <AccordionContent>
+                        <Button label="Ajouter une documentation" @click="addNewDocumentation"  />
+                        <ul v-if="activeDocumentation" >
+                            <li v-for="(document,index) in panelMenuItems" :key="index" @click="activeDocumentID = document.label   " >
+                                <p><span class="font-bold" >{{ document.order + 1 }}.</span>{{ document.label }}</p>
+                                <Button icon="pi pi-trash" @click="activeDocumentation?.removeDocument(document.label)" />
+                            </li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionPanel>
+            </Accordion>
 
         </main>
 
@@ -78,6 +114,8 @@ import { DocumentationVersion0001 } from '~/schemas/documentation/Documentation'
 const toast = useToast();
 
 const activeDocumentID = ref();
+
+const toolsCount = computed(()=> (activeDocumentation.value?.getTools() ?? []).length );
 
 const documentations = ref<AbstractDocumentation[]>([]);
 
@@ -102,9 +140,10 @@ const computeUploadedPicturesStatus = ( files: File[] ) => {
 }
 
 const panelMenuItems = computed(()=>{
-    return documentations.value.map( doc => {
+    return documentations.value.map( (doc, index) => {
         return {
             label: doc.getID(),
+            order: index,
             command: () => {
                 activeDocumentID.value = doc.getID()
             }
@@ -187,15 +226,17 @@ const addNewDocumentation = async () => {
     
 }
 
-onMounted(async () => {
+onMounted(() => {
 
-    const documentation = new DocumentationVersion0001();
+    (async()=>{
+        const documentation = new DocumentationVersion0001();
 
-    const [ error, documentID ] = await documentation.new()
-    
-    documentations.value.push(documentation);
+        const [ error, documentID ] = await documentation.new()
 
-    activeDocumentID.value = documentID;
+        documentations.value.push(documentation);
+
+        activeDocumentID.value = documentID;
+    })();
 
 });
 

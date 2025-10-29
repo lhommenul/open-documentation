@@ -48,7 +48,7 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
 
     getTools(): AbstractTool[] {
         console.log(this.tools)
-        return this.tools
+        return this.tools ?? []
     }
 
     addTool( toolName: string ): Turple<boolean> {

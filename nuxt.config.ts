@@ -4,6 +4,7 @@ import Aura from '@primeuix/themes/aura';
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  srcDir: 'app',
   modules: ['@nuxt/eslint', '@primevue/nuxt-module'],
   vite: {    
     plugins: [      

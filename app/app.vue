@@ -9,6 +9,8 @@
 
 <script setup lang="ts">
 import Toast from 'primevue/toast';
+import 'primeicons/primeicons.css'
+
 useSeoMeta({
   title: 'Open Documentation',
   description: 'Open documentation by Thirdshop',
