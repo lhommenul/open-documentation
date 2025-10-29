@@ -16,6 +16,8 @@ export class Picture implements AbstractPicture {
             return Promise.resolve([new Error("File not found"), null]);
         }
 
+        this.file = file;
+
         const uploadImageResponse = await uploadImage(file);
 
         if ( uploadImageResponse[0] === null ) {
@@ -23,6 +25,16 @@ export class Picture implements AbstractPicture {
         }
 
         return uploadImageResponse;
+
+    }
+
+    getRawFilename() {
+        return this.file?.name;
+    }
+
+    getObjectURL() {
+
+        return window.URL.createObjectURL(this.file)
 
     }
 

@@ -16,7 +16,6 @@
                         @select="onUpload" 
                         customUpload 
                         :multiple="true" 
-                        auto
                         accept="image/*" 
                         :maxFileSize="1000000"
                         :showUploadButton="false"
@@ -24,6 +23,15 @@
                     >
                         <template #empty>
                             <span>Drag and drop files to here to upload.</span>
+                        </template>
+                        <template #content="{ files }">
+                            <ul>
+                                <li v-for="file in computeUploadedPicturesStatus(files)" class="flex flex-row gap-4 items-center" >
+                                    <img :src="file?.objectURL" alt="picture" >
+                                    {{ file.rawFilename }}
+                                    <Badge :value="file.uploadStatus" severity="secondary"></Badge>
+                                </li>
+                            </ul>
                         </template>
                     </FileUpload>
                 </div>
@@ -73,7 +81,25 @@ const activeDocumentID = ref();
 
 const documentations = ref<AbstractDocumentation[]>([]);
 
-const activeDocumentation = computed(()=> documentations.value.find( doc => doc.getID() === activeDocumentID.value ) )
+const activeDocumentation = computed(()=> documentations.value.find( doc => doc.getID() === activeDocumentID.value ) );
+
+const computeUploadedPicturesStatus = ( files: File[] ) => {
+
+    const pictures = activeDocumentation.value?.getPictures();
+
+    return pictures?.map( picture => {
+
+        const pictureIsUploaded = files?.find( file => picture.getRawFilename() === file.name );
+
+        return {
+            rawFilename: picture.getRawFilename(),
+            objectURL: picture.getObjectURL(),
+            uploadStatus: pictureIsUploaded ? "Succès" : "Pas Upload"
+        }
+
+    })
+
+}
 
 const panelMenuItems = computed(()=>{
     return documentations.value.map( doc => {
