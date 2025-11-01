@@ -1,0 +1,156 @@
+###
+# Fichier de tests HTTP pour les API Nuxt
+# Utilisable avec VS Code REST Client extension ou curl
+###
+
+@baseUrl = http://localhost:3000
+
+### Test 1: Upload d'une image
+POST {{baseUrl}}/api/upload
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Test 2: Upload documentation simple (sans enfants)
+POST {{baseUrl}}/api/documentation
+Content-Type: application/json
+
+{
+  "id": null,
+  "content": "Ceci est une documentation de test",
+  "order": 0,
+  "title": "Documentation Test",
+  "tools": [
+    { "name": "Tournevis" },
+    { "name": "Clé à molette" }
+  ],
+  "pictures": [
+    {
+      "filename": "test-image.jpg",
+      "url": "/uploads/test-image.jpg",
+      "rawFilename": "original.jpg"
+    }
+  ],
+  "children": []
+}
+
+### Test 3: Upload documentation avec étapes (children)
+POST {{baseUrl}}/api/documentation
+Content-Type: application/json
+
+{
+  "id": null,
+  "content": "Réparation du moteur de Peugeot 208",
+  "order": 0,
+  "title": "Réparation moteur",
+  "tools": [],
+  "pictures": [],
+  "children": [
+    {
+      "id": "step-1",
+      "content": "Démonter le capot",
+      "order": 0,
+      "title": "Étape 1 - Démontage",
+      "tools": [
+        { "name": "Tournevis cruciforme" }
+      ],
+      "pictures": [],
+      "children": []
+    },
+    {
+      "id": "step-2",
+      "content": "Vérifier le niveau d'huile",
+      "order": 1,
+      "title": "Étape 2 - Vérification",
+      "tools": [
+        { "name": "Jauge" }
+      ],
+      "pictures": [],
+      "children": []
+    },
+    {
+      "id": "step-3",
+      "content": "Remonter le capot",
+      "order": 2,
+      "title": "Étape 3 - Remontage",
+      "tools": [
+        { "name": "Tournevis cruciforme" }
+      ],
+      "pictures": [],
+      "children": []
+    }
+  ]
+}
+
+### Test 4: Documentation avec enfants imbriqués (nested children)
+POST {{baseUrl}}/api/documentation
+Content-Type: application/json
+
+{
+  "id": null,
+  "content": "Guide complet de réparation",
+  "order": 0,
+  "title": "Guide complet",
+  "tools": [],
+  "pictures": [],
+  "children": [
+    {
+      "id": "chapter-1",
+      "content": "Chapitre 1: Préparation",
+      "order": 0,
+      "title": "Chapitre 1",
+      "tools": [],
+      "pictures": [],
+      "children": [
+        {
+          "id": "chapter-1-step-1",
+          "content": "Rassembler les outils",
+          "order": 0,
+          "title": "Étape 1.1",
+          "tools": [{ "name": "Tournevis" }],
+          "pictures": [],
+          "children": []
+        },
+        {
+          "id": "chapter-1-step-2",
+          "content": "Préparer l'espace de travail",
+          "order": 1,
+          "title": "Étape 1.2",
+          "tools": [],
+          "pictures": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "chapter-2",
+      "content": "Chapitre 2: Réparation",
+      "order": 1,
+      "title": "Chapitre 2",
+      "tools": [],
+      "pictures": [],
+      "children": [
+        {
+          "id": "chapter-2-step-1",
+          "content": "Démonter la pièce",
+          "order": 0,
+          "title": "Étape 2.1",
+          "tools": [{ "name": "Clé" }],
+          "pictures": [],
+          "children": []
+        }
+      ]
+    }
+  ]
+}
+
+### Test 5: Vérifier qu'une image uploadée est accessible
+GET {{baseUrl}}/uploads/1234567890-abc-normalized.jpg
+
+###
+

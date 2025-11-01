@@ -1,7 +1,6 @@
 import type { Turple } from "~/shared/types/Turple";
-import { buildOpenCommunicationUrl } from "~/shared/utils/openCommunicationConfig";
 import * as z from "zod";
- 
+
 export const UploadImageResponse = z.object({
   filename: z.string(),
   path: z.string(),
@@ -21,8 +20,8 @@ export async function uploadImage(file: File): Promise<Turple<UploadImageRespons
         const formData = new FormData();
         formData.append('image', file);
 
-        const endpoint = buildOpenCommunicationUrl('/upload');
-        const response = await fetch(endpoint, {
+        // Utiliser l'API locale Nuxt
+        const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData,
             

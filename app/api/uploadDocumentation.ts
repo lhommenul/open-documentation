@@ -1,6 +1,5 @@
 import type { Turple } from "~/shared/types/Turple";
 import type { AbstractDocumentation } from "~/schemas/documentation/types/AbstractDocumentation";
-import { buildOpenCommunicationUrl } from "~/shared/utils/openCommunicationConfig";
 import * as z from "zod";
 
 // Schéma Zod pour la réponse d'upload de documentation
@@ -76,8 +75,8 @@ export async function uploadDocumentation(
 
     console.log('Uploading documentation with payload:', payload);
 
-    const endpoint = buildOpenCommunicationUrl('/documentation');
-    const response = await fetch(endpoint, {
+    // Utiliser l'API locale Nuxt
+    const response = await fetch('/api/documentation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
