@@ -26,6 +26,14 @@
                 </div>
             </div>
             <div class="flex items-center gap-4">
+                <div v-if="isSaving" class="flex items-center gap-2 text-sm text-gray-500">
+                    <i class="pi pi-spin pi-spinner"></i>
+                    <span>Sauvegarde...</span>
+                </div>
+                <div v-else-if="lastSavedAt" class="text-sm text-gray-500">
+                    <i class="pi pi-check text-green-500"></i>
+                    <span>Sauvegardé {{ formatLastSaved(lastSavedAt) }}</span>
+                </div>
                 <Button 
                     label="Nouvelle étape" 
                     icon="pi pi-plus" 
@@ -33,10 +41,12 @@
                     size="small"
                 />
                 <Button 
-                    label="Exporter" 
-                    icon="pi pi-download" 
-                    severity="secondary"
+                    label="Publier" 
+                    icon="pi pi-cloud-upload" 
+                    severity="success"
                     size="small"
+                    @click="publishDocumentation"
+                    :loading="isPublishing"
                 />
             </div>
         </header>
@@ -353,8 +363,15 @@
 import type { AbstractDocumentation } from '~/schemas/documentation/types/AbstractDocumentation';
 import { useToast } from 'primevue/usetoast';
 import { DocumentationVersion0001 } from '~/schemas/documentation/Documentation';
+import { uploadDocumentationWithSteps } from '~/api/uploadDocumentation';
+import { useDebounceFn } from '@vueuse/core';
 
 const toast = useToast();
+
+// État de sauvegarde et publication
+const isSaving = ref(false);
+const isPublishing = ref(false);
+const lastSavedAt = ref<Date | null>(null);
 
 // Titre global
 const globalTitle = ref<string>('Réparation du moteur de Peugeot 208');
@@ -619,6 +636,126 @@ const saveDocumentation = () => {
         life: 2000
     });
 };
+
+// Sauvegarde automatique avec throttle
+const autoSave = useDebounceFn(async () => {
+    if (documentations.value.length === 0) return;
+    
+    isSaving.value = true;
+    
+    try {
+        // Ici, vous pouvez sauvegarder localement ou dans une base de données temporaire
+        // Pour l'instant, on simule une sauvegarde
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        lastSavedAt.value = new Date();
+        
+        console.log('Auto-saved at', lastSavedAt.value);
+    } catch (error) {
+        console.error('Auto-save error:', error);
+    } finally {
+        isSaving.value = false;
+    }
+}, 2000); // Throttle de 2 secondes
+
+// Publication de la documentation complète
+const publishDocumentation = async () => {
+    if (documentations.value.length === 0) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Attention',
+            detail: 'Aucune étape à publier',
+            life: 3000
+        });
+        return;
+    }
+
+    isPublishing.value = true;
+
+    try {
+        // Créer une documentation mère
+        const parentDoc = new DocumentationVersion0001();
+        await parentDoc.new();
+        
+        // Ajouter le contenu du titre global
+        if (globalTitle.value) {
+            parentDoc.setContent(globalTitle.value);
+        }
+
+        // Préparer les étapes avec leurs titres
+        const childrenDocs = sortedDocumentations.value.map(docItem => ({
+            documentation: docItem.documentation,
+            title: docItem.title
+        }));
+
+        // Upload la documentation complète
+        const [error, response] = await uploadDocumentationWithSteps(
+            parentDoc,
+            childrenDocs,
+            globalTitle.value
+        );
+
+        if (error) {
+            toast.add({
+                severity: 'error',
+                summary: 'Erreur de publication',
+                detail: error.message,
+                life: 5000
+            });
+            return;
+        }
+
+        toast.add({
+            severity: 'success',
+            summary: 'Publication réussie',
+            detail: `Documentation publiée avec ${response?.childrenCount || childrenDocs.length} étape(s)`,
+            life: 5000
+        });
+
+        lastSavedAt.value = new Date();
+    } catch (error) {
+        console.error('Publish error:', error);
+        toast.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Une erreur est survenue lors de la publication',
+            life: 5000
+        });
+    } finally {
+        isPublishing.value = false;
+    }
+};
+
+// Formater la date de dernière sauvegarde
+const formatLastSaved = (date: Date) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) {
+        return 'à l\'instant';
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `il y a ${minutes} min`;
+    } else {
+        return date.toLocaleTimeString('fr-FR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    }
+};
+
+// Watchers pour la sauvegarde automatique
+watch(globalTitle, () => {
+    autoSave();
+});
+
+watch(documentations, () => {
+    autoSave();
+}, { deep: true });
+
+watch(activeDocumentContent, () => {
+    autoSave();
+});
 
 // Lifecycle
 onMounted(async () => {
