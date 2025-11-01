@@ -4,6 +4,13 @@
         <!-- HEADER -->
         <header class="bg-white shadow-lg h-16 flex items-center justify-between px-8">
             <div class="flex items-center gap-4 flex-1">
+                <Button 
+                    icon="pi pi-arrow-left" 
+                    text
+                    rounded
+                    @click="navigateTo('/documentation')"
+                    v-tooltip.bottom="'Retour à la liste'"
+                />
                 <i class="pi pi-book text-2xl text-blue-600"></i>
                 <div class="flex-1 max-w-2xl">
                     <input
@@ -26,7 +33,11 @@
                 </div>
             </div>
             <div class="flex items-center gap-4">
-                <div v-if="isSaving" class="flex items-center gap-2 text-sm text-gray-500">
+                <div v-if="isLoadingDoc" class="flex items-center gap-2 text-sm text-gray-500">
+                    <i class="pi pi-spin pi-spinner"></i>
+                    <span>Chargement...</span>
+                </div>
+                <div v-else-if="isSaving" class="flex items-center gap-2 text-sm text-gray-500">
                     <i class="pi pi-spin pi-spinner"></i>
                     <span>Sauvegarde...</span>
                 </div>
@@ -41,17 +52,36 @@
                     size="small"
                 />
                 <Button 
-                    label="Publier" 
-                    icon="pi pi-cloud-upload" 
+                    label="Enregistrer" 
+                    icon="pi pi-save" 
                     severity="success"
                     size="small"
-                    @click="publishDocumentation"
+                    @click="() => publishDocumentation(false)"
                     :loading="isPublishing"
                 />
             </div>
         </header>
 
-        <div class="flex-1 flex overflow-hidden">
+        <div v-if="isLoadingDoc" class="flex-1 flex items-center justify-center">
+            <div class="text-center">
+                <i class="pi pi-spin pi-spinner text-6xl text-blue-500 mb-4"></i>
+                <p class="text-xl text-gray-600">Chargement de la documentation...</p>
+            </div>
+        </div>
+
+        <div v-else-if="loadError" class="flex-1 flex items-center justify-center">
+            <div class="text-center">
+                <i class="pi pi-exclamation-triangle text-6xl text-red-500 mb-4"></i>
+                <p class="text-xl text-gray-600 mb-4">{{ loadError }}</p>
+                <Button 
+                    label="Retour à la liste" 
+                    icon="pi pi-arrow-left" 
+                    @click="navigateTo('/documentation')"
+                />
+            </div>
+        </div>
+
+        <div v-else class="flex-1 flex overflow-hidden">
 
             <!-- SIDEBAR GAUCHE - Liste des documentations/étapes -->
             <aside class="w-80 bg-white shadow-lg overflow-y-auto border-r">
@@ -162,7 +192,7 @@
                 <div v-else class="p-8">
                     
                     <!-- En-tête de l'étape -->
-                    <div class="mb-6 bg-white p-6 rounded-lg shadow-sm">
+                    <div v-if="activeDocInfo" class="mb-6 bg-white p-6 rounded-lg shadow-sm">
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex items-center gap-4 flex-1">
                                 <Badge :value="`Étape ${activeDocInfo.order + 1}`" severity="info" class="text-lg px-4 py-2" />
@@ -241,13 +271,6 @@
                                             v-model="activeDocumentContent" 
                                             editorStyle="height: 500px" 
                                         />
-                                        <div class="mt-4 flex justify-end gap-2">
-                                            <Button 
-                                                label="Enregistrer" 
-                                                icon="pi pi-save" 
-                                                @click="saveDocumentation"
-                                            />
-                                        </div>
                                     </div>
                                 </TabPanel>
 
@@ -278,18 +301,14 @@
                                                         <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                             <Button 
                                                                 icon="pi pi-trash" 
-                                                                @click="activeDocumentation?.removePicture(picture.getRawFilename())"
+                                                                @click="() => {}"
                                                                 severity="danger"
                                                                 rounded
+                                                                v-tooltip.top="'Supprimer'"
                                                             />
                                                         </div>
                                                         <div class="p-2 bg-gray-100">
                                                             <p class="text-xs truncate">{{ picture.getRawFilename() }}</p>
-                                                            <Badge 
-                                                                :value="files?.find(f => f.name === picture.getRawFilename()) ? 'Uploadé' : 'En attente'" 
-                                                                :severity="files?.find(f => f.name === picture.getRawFilename()) ? 'success' : 'warning'"
-                                                                class="mt-1"
-                                                            />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -366,7 +385,16 @@ import { DocumentationVersion0001 } from '~/schemas/documentation/Documentation'
 import { uploadDocumentationWithSteps } from '~/api/uploadDocumentation';
 import { useDebounceFn } from '@vueuse/core';
 
+const route = useRoute();
+const router = useRouter();
 const toast = useToast();
+
+// ID de la documentation depuis l'URL
+const documentationId = computed(() => route.params.id as string);
+
+// État de chargement
+const isLoadingDoc = ref(true);
+const loadError = ref<string | null>(null);
 
 // État de sauvegarde et publication
 const isSaving = ref(false);
@@ -374,7 +402,7 @@ const isPublishing = ref(false);
 const lastSavedAt = ref<Date | null>(null);
 
 // Titre global
-const globalTitle = ref<string>('Réparation du moteur de Peugeot 208');
+const globalTitle = ref<string>('');
 const editingGlobalTitle = ref(false);
 
 // Gestion des documentations
@@ -425,6 +453,82 @@ const hasNextStep = computed(() => {
     return activeDocInfo.value.order < documentations.value.length - 1;
 });
 
+// Charger la documentation depuis MongoDB
+const loadDocumentation = async () => {
+    isLoadingDoc.value = true;
+    loadError.value = null;
+
+    try {
+        const response = await $fetch(`/api/documentation?id=${documentationId.value}`);
+        
+        if (!response.success || !response.data) {
+            throw new Error('Documentation non trouvée');
+        }
+
+        const docData = response.data as any;
+        
+        // Reconstruire la structure de la documentation
+        globalTitle.value = docData.title || docData.content || '';
+        
+        // Charger les enfants (étapes)
+        if (docData.children && Array.isArray(docData.children)) {
+            documentations.value = await Promise.all(
+                docData.children.map(async (child: any, index: number) => {
+                    const doc = new DocumentationVersion0001();
+                    await doc.new();
+                    
+                    // Restaurer les données
+                    doc.setContent(child.content || '');
+                    doc.setOrder(child.order || index);
+                    
+                    // Restaurer les outils
+                    if (child.tools && Array.isArray(child.tools)) {
+                        child.tools.forEach((tool: any) => {
+                            doc.addTool(tool.name);
+                        });
+                    }
+                    
+                    // TODO: Restaurer les images (nécessite une gestion spéciale)
+                    
+                    return {
+                        id: child.id || doc.getID() || '',
+                        title: child.title || `Étape ${index + 1}`,
+                        order: child.order || index,
+                        documentation: doc
+                    };
+                })
+            );
+            
+            // Sélectionner la première étape
+            if (documentations.value.length > 0) {
+                activeDocumentID.value = documentations.value[0].id;
+            }
+        }
+        
+        lastSavedAt.value = docData.updatedAt ? new Date(docData.updatedAt) : null;
+        
+        toast.add({
+            severity: 'success',
+            summary: 'Chargement réussi',
+            detail: 'Documentation chargée depuis la base de données',
+            life: 3000
+        });
+        
+    } catch (error: any) {
+        console.error('Error loading documentation:', error);
+        loadError.value = error.message || 'Erreur lors du chargement de la documentation';
+        
+        toast.add({
+            severity: 'error',
+            summary: 'Erreur de chargement',
+            detail: loadError.value,
+            life: 5000
+        });
+    } finally {
+        isLoadingDoc.value = false;
+    }
+};
+
 // Drag and Drop Methods
 const handleDragStart = (event: DragEvent, index: number) => {
     draggedIndex.value = index;
@@ -456,21 +560,16 @@ const handleDrop = (event: DragEvent, dropIndex: number) => {
     const sorted = sortedDocumentations.value;
     const draggedItem = sorted[draggedIndex.value];
     
-    // Créer une nouvelle copie du tableau
+    if (!draggedItem) return;
+    
     const newDocs = [...sorted];
-    
-    // Retirer l'élément déplacé
     newDocs.splice(draggedIndex.value, 1);
-    
-    // L'insérer à la nouvelle position
     newDocs.splice(dropIndex, 0, draggedItem);
     
-    // Mettre à jour les ordres
     newDocs.forEach((doc, idx) => {
         doc.order = idx;
     });
     
-    // Mettre à jour la liste
     documentations.value = newDocs;
     
     draggedIndex.value = null;
@@ -610,7 +709,6 @@ const removeDocumentation = (docId: string) => {
     if (index > -1) {
         documentations.value.splice(index, 1);
         
-        // Réorganiser les ordres
         documentations.value.forEach((doc, idx) => {
             doc.order = idx;
         });
@@ -628,15 +726,6 @@ const removeDocumentation = (docId: string) => {
     }
 };
 
-const saveDocumentation = () => {
-    toast.add({
-        severity: 'success',
-        summary: 'Succès',
-        detail: 'Documentation enregistrée',
-        life: 2000
-    });
-};
-
 // Sauvegarde automatique avec throttle
 const autoSave = useDebounceFn(async () => {
     if (documentations.value.length === 0) return;
@@ -644,38 +733,39 @@ const autoSave = useDebounceFn(async () => {
     isSaving.value = true;
     
     try {
-        // Ici, vous pouvez sauvegarder localement ou dans une base de données temporaire
-        // Pour l'instant, on simule une sauvegarde
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        lastSavedAt.value = new Date();
-        
-        console.log('Auto-saved at', lastSavedAt.value);
+        await publishDocumentation(true); // Mode auto-save
     } catch (error) {
         console.error('Auto-save error:', error);
     } finally {
         isSaving.value = false;
     }
-}, 2000); // Throttle de 2 secondes
+}, 3000);
 
 // Publication de la documentation complète
-const publishDocumentation = async () => {
+const publishDocumentation = async (isAutoSave = false) => {
     if (documentations.value.length === 0) {
-        toast.add({
-            severity: 'warn',
-            summary: 'Attention',
-            detail: 'Aucune étape à publier',
-            life: 3000
-        });
+        if (!isAutoSave) {
+            toast.add({
+                severity: 'warn',
+                summary: 'Attention',
+                detail: 'Aucune étape à publier',
+                life: 3000
+            });
+        }
         return;
     }
 
-    isPublishing.value = true;
+    if (!isAutoSave) {
+        isPublishing.value = true;
+    }
 
     try {
         // Créer une documentation mère
         const parentDoc = new DocumentationVersion0001();
         await parentDoc.new();
+        
+        // Utiliser l'ID existant de l'URL
+        const docIdToUse = documentationId.value;
         
         // Ajouter le contenu du titre global
         if (globalTitle.value) {
@@ -688,46 +778,50 @@ const publishDocumentation = async () => {
             title: docItem.title
         }));
 
-        // Upload la documentation complète
+        // Upload la documentation complète avec l'ID existant
         const [error, response] = await uploadDocumentationWithSteps(
             parentDoc,
             childrenDocs,
-            globalTitle.value
+            globalTitle.value,
+            docIdToUse // Passer l'ID existant
         );
 
         if (error) {
-            toast.add({
-                severity: 'error',
-                summary: 'Erreur de publication',
-                detail: error.message,
-                life: 5000
-            });
+            if (!isAutoSave) {
+                toast.add({
+                    severity: 'error',
+                    summary: 'Erreur de publication',
+                    detail: error.message,
+                    life: 5000
+                });
+            }
             return;
         }
 
-        toast.add({
-            severity: 'success',
-            summary: 'Publication réussie',
-            detail: `Documentation publiée avec ${response?.childrenCount || childrenDocs.length} étape(s)`,
-            life: 5000
-        });
+        if (!isAutoSave) {
+            toast.add({
+                severity: 'success',
+                summary: 'Publication réussie',
+                detail: `Documentation enregistrée avec ${response?.childrenCount || childrenDocs.length} étape(s)`,
+                life: 5000
+            });
+        }
 
         lastSavedAt.value = new Date();
-
-        // Rediriger vers la page de documentation avec l'ID
-        if (response?.documentationId) {
-            await navigateTo(`/documentation/${response.documentationId}`);
-        }
     } catch (error) {
         console.error('Publish error:', error);
-        toast.add({
-            severity: 'error',
-            summary: 'Erreur',
-            detail: 'Une erreur est survenue lors de la publication',
-            life: 5000
-        });
+        if (!isAutoSave) {
+            toast.add({
+                severity: 'error',
+                summary: 'Erreur',
+                detail: 'Une erreur est survenue lors de la publication',
+                life: 5000
+            });
+        }
     } finally {
-        isPublishing.value = false;
+        if (!isAutoSave) {
+            isPublishing.value = false;
+        }
     }
 };
 
@@ -764,26 +858,12 @@ watch(activeDocumentContent, () => {
 
 // Lifecycle
 onMounted(async () => {
-    const documentation = new DocumentationVersion0001();
-    const [error, documentID] = await documentation.new();
-
-    if (!error && documentID) {
-        const newDoc: DocumentationItem = {
-            id: documentID,
-            title: 'Vérification du moteur',
-            order: 0,
-            documentation
-        };
-        
-        documentations.value.push(newDoc);
-        activeDocumentID.value = documentID;
-    }
+    await loadDocumentation();
 });
 
 </script>
 
 <style scoped>
-
 
 [draggable="true"] {
     cursor: move;
@@ -793,3 +873,4 @@ onMounted(async () => {
     cursor: grabbing;
 }
 </style>
+

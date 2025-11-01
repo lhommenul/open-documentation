@@ -113,14 +113,68 @@ export async function uploadDocumentation(
  * @param parentDocumentation - La documentation mère
  * @param childrenDocumentations - Les documentations enfants (étapes) avec leurs titres
  * @param parentTitle - Le titre optionnel de la documentation mère
+ * @param existingId - L'ID existant à utiliser (pour les mises à jour)
  * @returns Une Turple contenant soit une erreur, soit la réponse d'upload
  */
 export async function uploadDocumentationWithSteps(
   parentDocumentation: AbstractDocumentation,
   childrenDocumentations: Array<{ documentation: AbstractDocumentation; title?: string }>,
-  parentTitle?: string
+  parentTitle?: string,
+  existingId?: string
 ): Promise<Turple<UploadDocumentationResponse>> {
   try {
+    // Si un ID existant est fourni, on doit créer un payload personnalisé
+    if (existingId) {
+      // Créer le payload avec l'ID existant
+      const children = childrenDocumentations.map((child, index) => {
+        const doc = child.documentation;
+        return {
+          id: doc.getID(),
+          content: doc.getContent(),
+          order: index,
+          title: child.title,
+          tools: doc.getTools().map(tool => ({ name: tool.getName() })),
+          pictures: doc.getPictures().map(picture => ({
+            filename: picture.getFilename(),
+            url: picture.getUrl(),
+            rawFilename: picture.getRawFilename()
+          })),
+          children: []
+        };
+      });
+
+      const payload: DocumentationPayload = {
+        id: existingId,
+        content: parentDocumentation.getContent() || parentTitle || null,
+        order: 0,
+        title: parentTitle,
+        tools: [],
+        pictures: [],
+        children
+      };
+
+      const response = await fetch('/api/documentation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        return [
+          new Error(`Failed to upload documentation: ${response.statusText}`),
+          null
+        ];
+      }
+
+      const data = await response.json();
+      const result = UploadDocumentationResponse.parse(data);
+
+      return [null, result];
+    }
+
+    // Sinon, utiliser le flux normal
     // Ajouter tous les enfants à la documentation mère
     for (const child of childrenDocumentations) {
       parentDocumentation.addChildrenDocumentation(child.documentation);
