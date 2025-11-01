@@ -11,6 +11,9 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
     private pictures: AbstractPicture[] = []
     private documentID: CID | null = null
     private content: string | null = null
+    private order: number = 0
+    
+    private childrenDocumentations: AbstractDocumentation[] = []
 
     async new(): Promise<Turple<CID>> {
 
@@ -18,6 +21,26 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
 
         return [null, this.documentID]
 
+    }
+
+    setOrder( order: number ): void {
+        this.order = order
+    }
+
+    getOrder(): number {
+        return this.order
+    }
+
+    getChildrenDocumentations(): AbstractDocumentation[] {
+        return this.childrenDocumentations
+    }
+
+    addChildrenDocumentation( documentation: AbstractDocumentation ): void {
+        this.childrenDocumentations.push(documentation)
+    }
+
+    removeChildrenDocumentation( documentID: CID ): void {
+        this.childrenDocumentations = this.childrenDocumentations.filter( doc => doc.getID() !== documentID )
     }
 
     async save(): Promise<Turple<CID>> {

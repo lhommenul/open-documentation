@@ -7,6 +7,11 @@ export interface AbstractDocumentation {
     new: () => Promise<Turple<CID>>
     save: () => Promise<Turple<CID>>
     getID: () => CID | null
+    getOrder: () => number
+    setOrder: ( order: number ) => void
+    getChildrenDocumentations: () => AbstractDocumentation[]
+    addChildrenDocumentation: ( documentation: AbstractDocumentation ) => void
+    removeChildrenDocumentation: ( documentID: CID ) => void
     getPictures: () => AbstractPicture[]
     addPicture: ( file: File ) => Promise<Turple<AbstractPicture>>
     getTools: () => AbstractTool[]
