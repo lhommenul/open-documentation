@@ -1,0 +1,145 @@
+### ============================================
+### MongoDB Atlas - Exemples d'API
+### ============================================
+
+### Variables
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+
+### ============================================
+### CRÉER une nouvelle documentation
+### ============================================
+POST {{baseUrl}}/documentation
+Content-Type: {{contentType}}
+
+{
+  "id": null,
+  "content": "# Guide de démarrage Vue.js\n\nVue.js est un framework JavaScript progressif pour construire des interfaces utilisateur.",
+  "order": 1,
+  "title": "Guide Vue.js - Introduction",
+  "tools": [
+    { "name": "Vue.js" },
+    { "name": "Vite" }
+  ],
+  "pictures": [
+    {
+      "filename": "vue-logo.png",
+      "url": "https://example.com/vue-logo.png"
+    }
+  ],
+  "children": [
+    {
+      "id": null,
+      "content": "## Installation\n\nPour installer Vue.js, utilisez npm ou yarn.",
+      "order": 1,
+      "title": "Installation",
+      "tools": [{ "name": "npm" }],
+      "pictures": [],
+      "children": []
+    },
+    {
+      "id": null,
+      "content": "## Premier composant\n\nCréez votre premier composant Vue.",
+      "order": 2,
+      "title": "Premier composant",
+      "tools": [],
+      "pictures": [],
+      "children": []
+    }
+  ]
+}
+
+### ============================================
+### RÉCUPÉRER toutes les documentations (avec pagination)
+### ============================================
+GET {{baseUrl}}/documentation?limit=10&skip=0&sortBy=createdAt&order=desc
+
+### ============================================
+### RÉCUPÉRER une documentation spécifique par ID
+### ============================================
+GET {{baseUrl}}/documentation?id=REMPLACER_PAR_UN_UUID
+
+### ============================================
+### RECHERCHER dans les documentations
+### ============================================
+GET {{baseUrl}}/documentation/search?q=Vue.js&limit=20
+
+### ============================================
+### METTRE À JOUR une documentation existante
+### ============================================
+POST {{baseUrl}}/documentation
+Content-Type: {{contentType}}
+
+{
+  "id": "REMPLACER_PAR_UN_UUID",
+  "content": "# Guide de démarrage Vue.js - Mis à jour\n\nContenu mis à jour.",
+  "order": 1,
+  "title": "Guide Vue.js - Introduction (v2)",
+  "tools": [
+    { "name": "Vue.js" },
+    { "name": "Vite" },
+    { "name": "TypeScript" }
+  ],
+  "pictures": [],
+  "children": []
+}
+
+### ============================================
+### SUPPRIMER une documentation
+### ============================================
+DELETE {{baseUrl}}/documentation/REMPLACER_PAR_UN_UUID
+
+### ============================================
+### CRÉER une documentation simple (minimum requis)
+### ============================================
+POST {{baseUrl}}/documentation
+Content-Type: {{contentType}}
+
+{
+  "id": null,
+  "content": "Documentation simple",
+  "order": 0,
+  "tools": [],
+  "pictures": [],
+  "children": []
+}
+
+### ============================================
+### TESTER la pagination
+### ============================================
+
+# Page 1
+GET {{baseUrl}}/documentation?limit=5&skip=0
+
+###
+
+# Page 2
+GET {{baseUrl}}/documentation?limit=5&skip=5
+
+###
+
+# Page 3
+GET {{baseUrl}}/documentation?limit=5&skip=10
+
+### ============================================
+### TRIER par titre (ordre alphabétique)
+### ============================================
+GET {{baseUrl}}/documentation?sortBy=title&order=asc
+
+### ============================================
+### TRIER par date de création (plus récents)
+### ============================================
+GET {{baseUrl}}/documentation?sortBy=createdAt&order=desc
+
+### ============================================
+### RECHERCHE avancée
+### ============================================
+
+# Rechercher "Vue"
+GET {{baseUrl}}/documentation/search?q=Vue&limit=10
+
+###
+
+# Rechercher "JavaScript framework"
+GET {{baseUrl}}/documentation/search?q=JavaScript+framework&limit=10
+

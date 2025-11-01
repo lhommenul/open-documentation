@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { connectToDatabase } from '../config/database';
+import Documentation from '../models/Documentation';
 
 // Interface pour le payload de documentation
 interface ToolPayload {
@@ -126,19 +128,57 @@ export default defineEventHandler(async (event) => {
     const childrenCount = countChildren(body.children);
     const uploadedAt = new Date().toISOString();
 
-    // TODO: Persister la documentation ici (DB/IPFS) quand disponible
-    console.log('Documentation received:', {
-      id: documentationId,
-      title: body.title,
-      childrenCount,
-      toolsCount: body.tools.length,
-      picturesCount: body.pictures.length
-    });
+    // Connexion à MongoDB
+    await connectToDatabase();
+
+    // Vérifier si un document avec cet ID existe déjà
+    const existingDoc = await Documentation.findOne({ id: documentationId });
+
+    if (existingDoc) {
+      // Mettre à jour le document existant
+      existingDoc.content = body.content;
+      existingDoc.order = body.order;
+      existingDoc.title = body.title;
+      existingDoc.tools = body.tools;
+      existingDoc.pictures = body.pictures;
+      existingDoc.children = body.children as any;
+      
+      await existingDoc.save();
+      
+      console.log('Documentation updated:', {
+        id: documentationId,
+        title: body.title,
+        childrenCount,
+        toolsCount: body.tools.length,
+        picturesCount: body.pictures.length
+      });
+    } else {
+      // Créer un nouveau document
+      const newDocumentation = new Documentation({
+        id: documentationId,
+        content: body.content,
+        order: body.order,
+        title: body.title,
+        tools: body.tools,
+        pictures: body.pictures,
+        children: body.children
+      });
+
+      await newDocumentation.save();
+      
+      console.log('Documentation created:', {
+        id: documentationId,
+        title: body.title,
+        childrenCount,
+        toolsCount: body.tools.length,
+        picturesCount: body.pictures.length
+      });
+    }
 
     // Retourner la réponse de succès
     return {
       documentationId,
-      message: 'Documentation uploaded successfully',
+      message: existingDoc ? 'Documentation updated successfully' : 'Documentation created successfully',
       childrenCount,
       uploadedAt
     };
