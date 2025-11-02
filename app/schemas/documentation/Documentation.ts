@@ -69,6 +69,14 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
 
     }
 
+    addExistingPicture( picture: AbstractPicture ): void {
+        this.pictures.push(picture)
+    }
+
+    removePicture( filename: string ): void {
+        this.pictures = this.pictures.filter( picture => picture.getRawFilename() !== filename )
+    }
+
     getTools(): AbstractTool[] {
         console.log(this.tools)
         return this.tools ?? []

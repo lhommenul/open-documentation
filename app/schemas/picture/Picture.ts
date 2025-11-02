@@ -10,6 +10,25 @@ export class Picture implements AbstractPicture {
     // Upload images url
     public uploadResponse: UploadImageResponse | null = null;
 
+    /**
+     * Restaure une Picture à partir de données MongoDB
+     */
+    static fromData(data: { filename?: string; url?: string; rawFilename?: string }): Picture {
+        const picture = new Picture();
+        
+        if (data.filename || data.url) {
+            picture.uploadResponse = {
+                filename: data.filename || '',
+                url: data.url || '',
+                path: '',
+                size: 0,
+                mimetype: ''
+            };
+        }
+        
+        return picture;
+    }
+
     async upload( file: File ): Promise<Turple<UploadImageResponse>> {
 
         if ( !file ) {
@@ -29,23 +48,25 @@ export class Picture implements AbstractPicture {
     }
 
     getRawFilename() {
-        return this.file?.name;
+        return this.file?.name || this.uploadResponse?.filename || '';
     }
 
     getObjectURL() {
-
-        return window.URL.createObjectURL(this.file)
-
+        // Si on a un fichier local, utiliser l'object URL
+        if (this.file) {
+            return window.URL.createObjectURL(this.file);
+        }
+        
+        // Sinon, utiliser l'URL depuis le serveur
+        return this.uploadResponse?.url || '';
     }
 
     getFilename() {
-
-        return this.uploadResponse?.filename;
-
+        return this.uploadResponse?.filename || '';
     }
 
     getUrl() {
-        return this.uploadResponse?.url
+        return this.uploadResponse?.url || '';
     }
 
 }

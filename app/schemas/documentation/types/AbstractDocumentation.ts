@@ -13,7 +13,9 @@ export interface AbstractDocumentation {
     addChildrenDocumentation: ( documentation: AbstractDocumentation ) => void
     removeChildrenDocumentation: ( documentID: CID ) => void
     getPictures: () => AbstractPicture[]
-    addPicture: ( file: File ) => Promise<Turple<AbstractPicture>>
+    addPicture: ( file: File ) => Promise<Turple<any>>
+    addExistingPicture?: ( picture: AbstractPicture ) => void
+    removePicture?: ( filename: string ) => void
     getTools: () => AbstractTool[]
     removeTool: (toolName: string) => void
     getContent: () => string | null

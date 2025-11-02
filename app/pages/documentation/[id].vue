@@ -8,7 +8,7 @@
                     icon="pi pi-arrow-left" 
                     text
                     rounded
-                    @click="navigateTo('/documentation')"
+                    @click="navigateTo('/documentation/list')"
                     v-tooltip.bottom="'Retour à la liste'"
                 />
                 <i class="pi pi-book text-2xl text-blue-600"></i>
@@ -301,7 +301,7 @@
                                                         <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                             <Button 
                                                                 icon="pi pi-trash" 
-                                                                @click="() => {}"
+                                                                @click="() => handleRemovePicture(picture.getRawFilename())"
                                                                 severity="danger"
                                                                 rounded
                                                                 v-tooltip.top="'Supprimer'"
@@ -384,6 +384,7 @@ import { useToast } from 'primevue/usetoast';
 import { DocumentationVersion0001 } from '~/schemas/documentation/Documentation';
 import { uploadDocumentationWithSteps } from '~/api/uploadDocumentation';
 import { useDebounceFn } from '@vueuse/core';
+import { Picture } from '~/schemas/picture/Picture';
 
 const route = useRoute();
 const router = useRouter();
@@ -488,7 +489,13 @@ const loadDocumentation = async () => {
                         });
                     }
                     
-                    // TODO: Restaurer les images (nécessite une gestion spéciale)
+                    // Restaurer les images depuis MongoDB
+                    if (child.pictures && Array.isArray(child.pictures)) {
+                        child.pictures.forEach((pictureData: any) => {
+                            const picture = Picture.fromData(pictureData);
+                            (doc as DocumentationVersion0001).addExistingPicture(picture);
+                        });
+                    }
                     
                     return {
                         id: child.id || doc.getID() || '',
@@ -500,7 +507,7 @@ const loadDocumentation = async () => {
             );
             
             // Sélectionner la première étape
-            if (documentations.value.length > 0) {
+            if (documentations.value.length > 0 && documentations.value[0]) {
                 activeDocumentID.value = documentations.value[0].id;
             }
         }
@@ -668,6 +675,19 @@ const onUpload = async (event: any) => {
         summary: 'Succès',
         detail: 'Image ajoutée avec succès',
         life: 3000
+    });
+};
+
+const handleRemovePicture = (filename: string) => {
+    if (!activeDocumentation.value) return;
+    
+    (activeDocumentation.value as DocumentationVersion0001).removePicture(filename);
+    
+    toast.add({
+        severity: 'info',
+        summary: 'Supprimé',
+        detail: 'Image supprimée',
+        life: 2000
     });
 };
 
