@@ -149,7 +149,11 @@
             <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
               <div class="text-sm text-gray-600">
                 <span v-if="hasActiveFilters">
-                  {{ Object.keys(filters).filter(k => filters[k] && filters[k].length > 0).length }} filtre(s) actif(s)
+                  {{ Object.keys(filters).filter(k => {
+                    const key = k as keyof SearchFilters
+                    const value = filters[key]
+                    return value && (Array.isArray(value) ? value.length > 0 : true)
+                  }).length }} filtre(s) actif(s)
                 </span>
                 <span v-else class="text-gray-400">Aucun filtre appliqué</span>
               </div>
@@ -248,7 +252,7 @@
                   @mouseenter="selectedSuggestionIndex = index"
                 >
                   <!-- Icon/Thumbnail -->
-                  <div class="w-12 h-12 bg-gradient-to-br from-primary-100 to-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div class="w-12 h-12 bg-linear-to-br from-primary-100 to-indigo-100 rounded-lg flex items-center justify-center shrink-0">
                     <i class="pi pi-file text-xl text-primary-600"></i>
                   </div>
   
@@ -380,9 +384,9 @@
     sortBy: null
   })
   
-  // Mock data (à remplacer par vos vraies données)
-  const availableBrands = ref(['Apple', 'Samsung', 'Sony', 'Microsoft', 'Google', 'Dell', 'HP', 'Lenovo'])
-  const availableTools = ref(['Tournevis', 'Clé Allen', 'Pince', 'Multimètre', 'Fer à souder', 'Pâte thermique'])
+  // Données dynamiques pour les filtres
+  const availableBrands = ref<string[]>([])
+  const availableTools = ref<string[]>([])
   
   const dateRangeOptions = [
     { label: 'Aujourd\'hui', value: 'today' },
@@ -448,39 +452,63 @@
   const fetchSuggestions = async () => {
     isSearching.value = true
     
-    // Simulation d'une recherche (remplacer par votre API)
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // Mock data avec scoring et match type
-    suggestions.value = [
-      {
-        id: '1',
-        title: 'iPhone 15 Pro - Guide complet d\'utilisation',
-        content: 'Documentation complète incluant la configuration initiale, les fonctionnalités avancées...',
-        brands: ['Apple'],
-        tools: ['Tournevis', 'Pince'],
-        updatedAt: new Date().toISOString(),
-        score: 95,
-        matchType: 'title'
-      },
-      {
-        id: '2',
-        title: 'MacBook Pro M3 - Réparation et maintenance',
-        content: 'Guide de réparation pour les problèmes courants du MacBook Pro...',
-        brands: ['Apple'],
-        tools: ['Tournevis', 'Pâte thermique'],
-        updatedAt: new Date(Date.now() - 86400000).toISOString(),
-        score: 87,
-        matchType: 'brand'
+    try {
+      // Appel à l'API de recherche réelle
+      const params = new URLSearchParams({
+        q: searchQuery.value,
+        limit: '10'
+      })
+
+      const response = await $fetch<{ 
+        success: boolean
+        data: Array<{
+          id: string
+          title?: string
+          content?: string | null
+          tools: Array<{ name: string }>
+          brands?: string[]
+          updatedAt?: string
+          createdAt?: string
+        }>
+      }>(`/api/documentation/search?${params.toString()}`)
+      
+      if (response.success && response.data) {
+        suggestions.value = response.data.map((doc, index) => {
+          // Déterminer le type de correspondance
+          let matchType: 'title' | 'content' | 'brand' | 'tool' = 'content'
+          let score = 100 - (index * 5) // Score décroissant basé sur l'ordre
+          
+          const query = searchQuery.value.toLowerCase()
+          if (doc.title?.toLowerCase().includes(query)) {
+            matchType = 'title'
+            score = Math.min(100, score + 10)
+          } else if (doc.brands?.some(b => b.toLowerCase().includes(query))) {
+            matchType = 'brand'
+          } else if (doc.tools.some(t => t.name.toLowerCase().includes(query))) {
+            matchType = 'tool'
+          }
+          
+          return {
+            id: doc.id,
+            title: doc.title || 'Sans titre',
+            content: doc.content || undefined,
+            brands: doc.brands || [],
+            tools: doc.tools.map(t => t.name),
+            updatedAt: doc.updatedAt || doc.createdAt,
+            score,
+            matchType
+          }
+        })
+      } else {
+        suggestions.value = []
       }
-    ].filter(s => 
-      s.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      s.content?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      s.brands?.some(b => b.toLowerCase().includes(searchQuery.value.toLowerCase()))
-    )
-    
-    isSearching.value = false
-    isExpanded.value = true
+    } catch (error) {
+      console.error('Error fetching suggestions:', error)
+      suggestions.value = []
+    } finally {
+      isSearching.value = false
+      isExpanded.value = true
+    }
   }
   
   const performSearch = () => {
@@ -498,7 +526,10 @@
   
   const selectCurrentSuggestion = () => {
     if (selectedSuggestionIndex.value >= 0 && suggestions.value[selectedSuggestionIndex.value]) {
-      selectSuggestion(suggestions.value[selectedSuggestionIndex.value])
+      const suggestion = suggestions.value[selectedSuggestionIndex.value]
+      if (suggestion) {
+        selectSuggestion(suggestion)
+      }
     } else {
       performSearch()
     }
@@ -563,9 +594,9 @@
   
   const removeFilter = (key: string) => {
     if (key === 'brands' || key === 'tools') {
-      filters.value[key] = []
-    } else {
-      filters.value[key] = null
+      filters.value[key as 'brands' | 'tools'] = []
+    } else if (key === 'dateRange' || key === 'sortBy') {
+      filters.value[key as 'dateRange' | 'sortBy'] = null
     }
     onFilterChange()
   }
@@ -617,7 +648,7 @@
   }
   
   const getMatchTypeLabel = (type: string) => {
-    const labels = {
+    const labels: Record<string, string> = {
       title: 'Correspondance dans le titre',
       content: 'Correspondance dans le contenu',
       brand: 'Correspondance dans les marques',
@@ -644,9 +675,48 @@
     showAdvancedFilters.value = false
   })
   
+  // Load available brands and tools
+  const loadAvailableFilters = async () => {
+    try {
+      // Charger toutes les documentations pour extraire les marques et outils
+      const response = await $fetch<{ 
+        success: boolean
+        data: Array<{
+          brands?: string[]
+          tools: Array<{ name: string }>
+        }>
+      }>('/api/documentation?limit=1000')
+      
+      if (response.success && response.data) {
+        const docs = Array.isArray(response.data) ? response.data : [response.data]
+        
+        // Extraire les marques uniques
+        const brandsSet = new Set<string>()
+        docs.forEach(doc => {
+          if (doc.brands) {
+            doc.brands.forEach(brand => brandsSet.add(brand))
+          }
+        })
+        availableBrands.value = Array.from(brandsSet).sort()
+        
+        // Extraire les outils uniques
+        const toolsSet = new Set<string>()
+        docs.forEach(doc => {
+          if (doc.tools) {
+            doc.tools.forEach(tool => toolsSet.add(tool.name))
+          }
+        })
+        availableTools.value = Array.from(toolsSet).sort()
+      }
+    } catch (error) {
+      console.error('Error loading filters:', error)
+    }
+  }
+
   // Lifecycle
   onMounted(() => {
     loadRecentSearches()
+    loadAvailableFilters()
   })
   </script>
   
@@ -654,6 +724,7 @@
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
