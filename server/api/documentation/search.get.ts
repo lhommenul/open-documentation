@@ -19,11 +19,21 @@ export default defineEventHandler(async (event) => {
 
     const limitNum = parseInt(limit as string, 10);
 
-    // Recherche en texte intégral
+    // Recherche flexible avec regex (insensible à la casse)
+    const searchRegex = new RegExp(q, 'i');
+    
+    // Recherche dans plusieurs champs avec OR
     const documentations = await Documentation
-      .find({ $text: { $search: q } })
+      .find({
+        $or: [
+          { title: searchRegex },
+          { content: searchRegex },
+          { brands: searchRegex },
+          { 'tools.name': searchRegex }
+        ]
+      })
       .limit(limitNum)
-      .sort({ score: { $meta: 'textScore' } });
+      .sort({ updatedAt: -1 });
 
     return {
       success: true,
