@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
 
     // Récupérer les paramètres de query
     const query = getQuery(event);
-    const { id, limit = '50', skip = '0', sortBy = 'createdAt', order = 'desc' } = query;
+    const { id, limit = '50', skip = '0', sortBy = 'createdAt', order = 'desc', brand, search } = query;
 
     // Si un ID est fourni, récupérer un document spécifique
     if (id) {
@@ -32,13 +32,27 @@ export default defineEventHandler(async (event) => {
     const skipNum = parseInt(skip as string, 10);
     const sortOrder = order === 'asc' ? 1 : -1;
 
+    // Construire les filtres
+    const filters: any = {};
+    
+    if (brand) {
+      filters.brand = brand;
+    }
+    
+    if (search && search !== '') {
+      filters.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
     const documentations = await Documentation
-      .find()
+      .find(filters)
       .sort({ [sortBy as string]: sortOrder })
       .limit(limitNum)
       .skip(skipNum);
 
-    const total = await Documentation.countDocuments();
+    const total = await Documentation.countDocuments(filters);
 
     return {
       success: true,
