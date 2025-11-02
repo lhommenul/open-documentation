@@ -18,6 +18,7 @@ interface DocumentationPayload {
   content: string | null;
   order: number;
   title?: string;
+  brands?: string[];
   tools: ToolPayload[];
   pictures: PicturePayload[];
   children: DocumentationPayload[];
@@ -75,6 +76,25 @@ export default defineEventHandler(async (event) => {
         statusCode: 400,
         statusMessage: 'Invalid field: title'
       });
+    }
+
+    if (typeof body?.brands !== 'undefined' && !Array.isArray(body?.brands)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Invalid field: brands (must be an array)'
+      });
+    }
+
+    // Validation des brands
+    if (body?.brands) {
+      for (const brand of body.brands) {
+        if (typeof brand !== 'string') {
+          throw createError({
+            statusCode: 400,
+            statusMessage: 'Invalid brand entry: expected string'
+          });
+        }
+      }
     }
 
     if (!hasArray(body?.tools)) {
@@ -139,6 +159,7 @@ export default defineEventHandler(async (event) => {
       existingDoc.content = body.content;
       existingDoc.order = body.order;
       existingDoc.title = body.title;
+      existingDoc.brands = body.brands || [];
       existingDoc.tools = body.tools;
       existingDoc.pictures = body.pictures;
       existingDoc.children = body.children as any;
@@ -159,6 +180,7 @@ export default defineEventHandler(async (event) => {
         content: body.content,
         order: body.order,
         title: body.title,
+        brands: body.brands || [],
         tools: body.tools,
         pictures: body.pictures,
         children: body.children

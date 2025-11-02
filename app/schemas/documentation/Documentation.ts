@@ -1,5 +1,4 @@
 import type { AbstractDocumentation } from './types/AbstractDocumentation'
-import type { CID } from '../ipfs/Ipfs'
 import type { Turple } from '~/shared/types/Turple'
 import type { AbstractPicture } from '../picture/types/AbstractPicture'
 import type { AbstractTool } from '../tool/types/AbstractTool'
@@ -9,13 +8,14 @@ import { Tool } from '../tool/Tool'
 export class DocumentationVersion0001 implements AbstractDocumentation {
     private tools: AbstractTool[] = []
     private pictures: AbstractPicture[] = []
-    private documentID: CID | null = null
+    private documentID: string | null = null
     private content: string | null = null
     private order: number = 0
+    private brands: string[] = []
     
     private childrenDocumentations: AbstractDocumentation[] = []
 
-    async new(): Promise<Turple<CID>> {
+    async new(): Promise<Turple<string>> {
 
         this.documentID = crypto.randomUUID()
 
@@ -39,15 +39,15 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
         this.childrenDocumentations.push(documentation)
     }
 
-    removeChildrenDocumentation( documentID: CID ): void {
+    removeChildrenDocumentation( documentID: string ): void {
         this.childrenDocumentations = this.childrenDocumentations.filter( doc => doc.getID() !== documentID )
     }
 
-    async save(): Promise<Turple<CID>> {
-        return [null, "cid"]
+    async save(): Promise<Turple<string>> {
+        return [null, "string"]
     }
 
-    getID(): CID | null {
+    getID(): string | null {
         return this.documentID
     }
 
@@ -110,6 +110,24 @@ export class DocumentationVersion0001 implements AbstractDocumentation {
 
     setContent( content: string ): void {
         this.content = content
+    }
+
+    getBrands(): string[] {
+        return this.brands
+    }
+
+    setBrands( brands: string[] ): void {
+        this.brands = brands
+    }
+
+    addBrand( brand: string ): void {
+        if ( !this.brands.includes(brand) ) {
+            this.brands.push(brand)
+        }
+    }
+
+    removeBrand( brand: string ): void {
+        this.brands = this.brands.filter( b => b !== brand )
     }
 
 }

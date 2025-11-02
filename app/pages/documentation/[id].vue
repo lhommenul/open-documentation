@@ -62,6 +62,46 @@
             </div>
         </header>
 
+        <!-- BARRE DE GESTION DES BRANDS GLOBALES -->
+        <div v-if="!isLoadingDoc && !loadError" class="bg-blue-50 border-b border-blue-200 px-8 py-4">
+            <div class="flex items-center gap-4">
+                <label class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <i class="pi pi-tag text-blue-600"></i>
+                    Marques/Brands :
+                </label>
+                <div class="flex-1 flex gap-2">
+                    <InputText 
+                        type="text" 
+                        v-model="brandInput" 
+                        placeholder="Ajouter une marque (ex: Peugeot, Renault...)" 
+                        @keydown.enter="handleAddBrand"
+                        class="flex-1"
+                        size="small"
+                    />
+                    <Button 
+                        label="Ajouter" 
+                        icon="pi pi-plus" 
+                        @click="handleAddBrand"
+                        size="small"
+                        severity="info"
+                    />
+                </div>
+            </div>
+            <div v-if="globalBrands.length > 0" class="flex flex-wrap gap-2 mt-3">
+                <Chip 
+                    v-for="(brand, index) in globalBrands" 
+                    :key="index"
+                    :label="brand"
+                    removable
+                    @remove="removeBrand(brand)"
+                    class="bg-blue-600 text-white"
+                />
+            </div>
+            <div v-else class="text-xs text-gray-500 mt-2 italic">
+                Aucune marque définie pour cette documentation
+            </div>
+        </div>
+
         <div v-if="isLoadingDoc" class="flex-1 flex items-center justify-center">
             <div class="text-center">
                 <i class="pi pi-spin pi-spinner text-6xl text-blue-500 mb-4"></i>
@@ -120,7 +160,7 @@
                                     </div>
                                     
                                     <!-- Order Badge -->
-                                    <div class="flex-shrink-0">
+                                    <div class="shrink-0">
                                         <Badge :value="doc.order + 1" class="text-base" />
                                     </div>
                                     
@@ -406,6 +446,10 @@ const lastSavedAt = ref<Date | null>(null);
 const globalTitle = ref<string>('');
 const editingGlobalTitle = ref(false);
 
+// Brands globales
+const globalBrands = ref<string[]>([]);
+const brandInput = ref<string>('');
+
 // Gestion des documentations
 interface DocumentationItem {
     id: string;
@@ -454,6 +498,49 @@ const hasNextStep = computed(() => {
     return activeDocInfo.value.order < documentations.value.length - 1;
 });
 
+// Brand Methods
+const handleAddBrand = () => {
+    if (!brandInput.value.trim()) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Attention',
+            detail: 'Veuillez entrer un nom de marque',
+            life: 3000
+        });
+        return;
+    }
+
+    if (globalBrands.value.includes(brandInput.value.trim())) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Attention',
+            detail: 'Cette marque existe déjà',
+            life: 3000
+        });
+        return;
+    }
+
+    globalBrands.value.push(brandInput.value.trim());
+    brandInput.value = '';
+    
+    toast.add({
+        severity: 'success',
+        summary: 'Succès',
+        detail: 'Marque ajoutée',
+        life: 2000
+    });
+};
+
+const removeBrand = (brand: string) => {
+    globalBrands.value = globalBrands.value.filter(b => b !== brand);
+    toast.add({
+        severity: 'info',
+        summary: 'Supprimée',
+        detail: 'Marque supprimée',
+        life: 2000
+    });
+};
+
 // Charger la documentation depuis MongoDB
 const loadDocumentation = async () => {
     isLoadingDoc.value = true;
@@ -470,6 +557,11 @@ const loadDocumentation = async () => {
         
         // Reconstruire la structure de la documentation
         globalTitle.value = docData.title || docData.content || '';
+        
+        // Charger les brands
+        if (docData.brands && Array.isArray(docData.brands)) {
+            globalBrands.value = docData.brands;
+        }
         
         // Charger les enfants (étapes)
         if (docData.children && Array.isArray(docData.children)) {
@@ -792,6 +884,11 @@ const publishDocumentation = async (isAutoSave = false) => {
             parentDoc.setContent(globalTitle.value);
         }
 
+        // Ajouter les brands globales à la documentation mère
+        if (globalBrands.value.length > 0) {
+            parentDoc.setBrands(globalBrands.value);
+        }
+
         // Préparer les étapes avec leurs titres
         const childrenDocs = sortedDocumentations.value.map(docItem => ({
             documentation: docItem.documentation,
@@ -867,6 +964,10 @@ const formatLastSaved = (date: Date) => {
 watch(globalTitle, () => {
     autoSave();
 });
+
+watch(globalBrands, () => {
+    autoSave();
+}, { deep: true });
 
 watch(documentations, () => {
     autoSave();

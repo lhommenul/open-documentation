@@ -7,6 +7,7 @@ export interface IDocumentation extends Document {
   content: string | null;
   order: number;
   title?: string;
+  brands: string[];
   tools: Array<{ name: string }>;
   pictures: Array<{
     filename?: string;
@@ -37,6 +38,10 @@ const DocumentationSchema = new Schema<IDocumentation>({
   title: {
     type: String,
     required: false
+  },
+  brands: {
+    type: [String],
+    default: []
   },
   tools: {
     type: [ToolSchema],

@@ -1,5 +1,4 @@
 import type { AbstractPicture } from "./types/AbstractPicture";
-import type { CID } from "../ipfs/Ipfs";
 import type { Turple } from "~/shared/types/Turple";
 import { uploadImage, type UploadImageResponse } from "~/api/uploadImage";
 

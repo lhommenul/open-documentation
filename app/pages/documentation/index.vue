@@ -51,6 +51,46 @@
             </div>
         </header>
 
+        <!-- BARRE DE GESTION DES BRANDS GLOBALES -->
+        <div class="bg-blue-50 border-b border-blue-200 px-8 py-4">
+            <div class="flex items-center gap-4">
+                <label class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <i class="pi pi-tag text-blue-600"></i>
+                    Marques/Brands :
+                </label>
+                <div class="flex-1 flex gap-2">
+                    <InputText 
+                        type="text" 
+                        v-model="brandInput" 
+                        placeholder="Ajouter une marque (ex: Peugeot, Renault...)" 
+                        @keydown.enter="handleAddBrand"
+                        class="flex-1"
+                        size="small"
+                    />
+                    <Button 
+                        label="Ajouter" 
+                        icon="pi pi-plus" 
+                        @click="handleAddBrand"
+                        size="small"
+                        severity="info"
+                    />
+                </div>
+            </div>
+            <div v-if="globalBrands.length > 0" class="flex flex-wrap gap-2 mt-3">
+                <Chip 
+                    v-for="(brand, index) in globalBrands" 
+                    :key="index"
+                    :label="brand"
+                    removable
+                    @remove="removeBrand(brand)"
+                    class="bg-blue-600 text-white"
+                />
+            </div>
+            <div v-else class="text-xs text-gray-500 mt-2 italic">
+                Aucune marque définie pour cette documentation
+            </div>
+        </div>
+
         <div class="flex-1 flex overflow-hidden">
 
             <!-- SIDEBAR GAUCHE - Liste des documentations/étapes -->
@@ -90,7 +130,7 @@
                                     </div>
                                     
                                     <!-- Order Badge -->
-                                    <div class="flex-shrink-0">
+                                    <div class="shrink-0">
                                         <Badge :value="doc.order + 1" class="text-base" />
                                     </div>
                                     
@@ -162,7 +202,7 @@
                 <div v-else class="p-8">
                     
                     <!-- En-tête de l'étape -->
-                    <div class="mb-6 bg-white p-6 rounded-lg shadow-sm">
+                    <div v-if="activeDocInfo" class="mb-6 bg-white p-6 rounded-lg shadow-sm">
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex items-center gap-4 flex-1">
                                 <Badge :value="`Étape ${activeDocInfo.order + 1}`" severity="info" class="text-lg px-4 py-2" />
@@ -278,7 +318,7 @@
                                                         <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                             <Button 
                                                                 icon="pi pi-trash" 
-                                                                @click="activeDocumentation?.removePicture(picture.getRawFilename())"
+                                                                @click="activeDocumentation?.removePicture?.(picture.getRawFilename())"
                                                                 severity="danger"
                                                                 rounded
                                                             />
@@ -377,6 +417,10 @@ const lastSavedAt = ref<Date | null>(null);
 const globalTitle = ref<string>('Réparation du moteur de Peugeot 208');
 const editingGlobalTitle = ref(false);
 
+// Brands globales
+const globalBrands = ref<string[]>([]);
+const brandInput = ref<string>('');
+
 // Gestion des documentations
 interface DocumentationItem {
     id: string;
@@ -456,6 +500,12 @@ const handleDrop = (event: DragEvent, dropIndex: number) => {
     const sorted = sortedDocumentations.value;
     const draggedItem = sorted[draggedIndex.value];
     
+    if (!draggedItem) {
+        draggedIndex.value = null;
+        dragOverIndex.value = null;
+        return;
+    }
+    
     // Créer une nouvelle copie du tableau
     const newDocs = [...sorted];
     
@@ -503,6 +553,49 @@ const goToNextStep = () => {
     if (nextDoc) {
         activeDocumentID.value = nextDoc.id;
     }
+};
+
+// Brand Methods
+const handleAddBrand = () => {
+    if (!brandInput.value.trim()) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Attention',
+            detail: 'Veuillez entrer un nom de marque',
+            life: 3000
+        });
+        return;
+    }
+
+    if (globalBrands.value.includes(brandInput.value.trim())) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Attention',
+            detail: 'Cette marque existe déjà',
+            life: 3000
+        });
+        return;
+    }
+
+    globalBrands.value.push(brandInput.value.trim());
+    brandInput.value = '';
+    
+    toast.add({
+        severity: 'success',
+        summary: 'Succès',
+        detail: 'Marque ajoutée',
+        life: 2000
+    });
+};
+
+const removeBrand = (brand: string) => {
+    globalBrands.value = globalBrands.value.filter(b => b !== brand);
+    toast.add({
+        severity: 'info',
+        summary: 'Supprimée',
+        detail: 'Marque supprimée',
+        life: 2000
+    });
 };
 
 // Tool Methods
@@ -682,6 +775,11 @@ const publishDocumentation = async () => {
             parentDoc.setContent(globalTitle.value);
         }
 
+        // Ajouter les brands globales à la documentation mère
+        if (globalBrands.value.length > 0) {
+            parentDoc.setBrands(globalBrands.value);
+        }
+
         // Préparer les étapes avec leurs titres
         const childrenDocs = sortedDocumentations.value.map(docItem => ({
             documentation: docItem.documentation,
@@ -753,6 +851,10 @@ const formatLastSaved = (date: Date) => {
 watch(globalTitle, () => {
     autoSave();
 });
+
+watch(globalBrands, () => {
+    autoSave();
+}, { deep: true });
 
 watch(documentations, () => {
     autoSave();

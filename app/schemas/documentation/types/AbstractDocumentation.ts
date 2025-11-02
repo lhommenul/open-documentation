@@ -21,4 +21,8 @@ export interface AbstractDocumentation {
     getContent: () => string | null
     setContent: ( content: string ) => void
     addTool: ( toolName: string ) => Turple<boolean>
+    getBrands: () => string[]
+    setBrands: ( brands: string[] ) => void
+    addBrand: ( brand: string ) => void
+    removeBrand: ( brand: string ) => void
 }

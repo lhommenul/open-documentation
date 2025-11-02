@@ -18,6 +18,7 @@ interface DocumentationPayload {
   content: string | null;
   order: number;
   title?: string;
+  brands?: string[];
   tools: Array<{ name: string }>;
   pictures: Array<{
     filename: string | undefined;
@@ -53,6 +54,7 @@ function serializeDocumentation(
     content: documentation.getContent(),
     order: documentation.getOrder(),
     title,
+    brands: documentation.getBrands(),
     tools,
     pictures,
     children
@@ -133,6 +135,7 @@ export async function uploadDocumentationWithSteps(
           content: doc.getContent(),
           order: index,
           title: child.title,
+          brands: doc.getBrands(),
           tools: doc.getTools().map(tool => ({ name: tool.getName() })),
           pictures: doc.getPictures().map(picture => ({
             filename: picture.getFilename(),
@@ -148,6 +151,7 @@ export async function uploadDocumentationWithSteps(
         content: parentDocumentation.getContent() || parentTitle || null,
         order: 0,
         title: parentTitle,
+        brands: parentDocumentation.getBrands(),
         tools: [],
         pictures: [],
         children
