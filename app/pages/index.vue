@@ -38,10 +38,14 @@
             Une plateforme collaborative pour créer, partager et enrichir la documentation de tous vos produits et outils.
           </p>
           <div class="flex flex-wrap gap-4">
-            <span class="inline-block px-4 py-2 rounded-lg bg-yellow-100 text-yellow-900 font-medium shadow-sm border border-yellow-200">
+            <span 
+              v-if="alphaMode" 
+              class="inline-block px-4 py-2 rounded-lg bg-yellow-100 text-yellow-900 font-medium shadow-sm border border-yellow-200"
+            >
               🚧 L'application est en alpha fermée, mais bientôt disponible !
             </span>
-            <!-- <Button 
+            <Button 
+              v-if="!alphaMode"
               label="Créer une documentation" 
               icon="pi pi-plus" 
               size="large"
@@ -49,13 +53,14 @@
               @click="navigateTo('/documentation')"
             />
             <Button 
+              v-if="!alphaMode"
               label="Explorer" 
               icon="pi pi-search" 
               outlined 
               size="large"
               class="px-8"
               @click="navigateTo('/documentation/list')"
-            /> -->
+            />
           </div>
           <div class="flex items-center gap-8 pt-4">
             <div>
@@ -273,6 +278,13 @@
 </template>
 
 <script setup lang="ts">
+const { alphaMode, fetchAlphaMode } = useAlphaMode();
+
+// Charger le mode alpha au montage du composant
+onMounted(async () => {
+  await fetchAlphaMode();
+});
+
 const toggleMenu = () => {
   // Logique pour le menu mobile
   console.log('Toggle menu')
