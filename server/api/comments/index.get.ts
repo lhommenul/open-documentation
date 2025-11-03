@@ -1,10 +1,9 @@
 import { defineEventHandler, getQuery } from 'h3';
 import Comment from '../../models/Comment';
-import connectDB from '../../config/database';
+import { connectToDatabase } from '../../config/database';
 
 export default defineEventHandler(async (event) => {
   try {
-    await connectDB();
     
     const query = getQuery(event);
     const { documentationId, stepId } = query;
@@ -21,6 +20,8 @@ export default defineEventHandler(async (event) => {
     if (stepId) {
       filter.stepId = stepId as string;
     }
+
+    await connectToDatabase();
 
     const comments = await Comment.find(filter).sort({ createdAt: -1 });
 

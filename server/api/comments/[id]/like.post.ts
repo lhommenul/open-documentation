@@ -1,10 +1,9 @@
 import { defineEventHandler } from 'h3';
 import Comment from '../../../models/Comment';
-import connectDB from '../../../config/database';
+import { connectToDatabase } from '../../../config/database';
 
 export default defineEventHandler(async (event) => {
   try {
-    await connectDB();
     
     const commentId = event.context.params?.id;
 
@@ -14,6 +13,8 @@ export default defineEventHandler(async (event) => {
         message: 'ID du commentaire requis'
       };
     }
+
+    await connectToDatabase();
 
     const comment = await Comment.findByIdAndUpdate(
       commentId,

@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import { Schema } from 'mongoose';
 
-const ToolSchema = new mongoose.Schema({
+const ToolSchema = new Schema({
   name: {
     type: String,
     required: true,

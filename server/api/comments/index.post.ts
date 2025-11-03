@@ -1,10 +1,9 @@
 import { defineEventHandler, readBody } from 'h3';
 import Comment from '../../models/Comment';
-import connectDB from '../../config/database';
+import { connectToDatabase } from '../../config/database';
 
 export default defineEventHandler(async (event) => {
   try {
-    await connectDB();
     
     const body = await readBody(event);
     const { userId, userName, documentationId, stepId, content, parentId } = body;
@@ -15,6 +14,8 @@ export default defineEventHandler(async (event) => {
         message: 'userId, userName, documentationId et content sont requis'
       };
     }
+
+    await connectToDatabase();
 
     const newComment = await Comment.create({
       userId,

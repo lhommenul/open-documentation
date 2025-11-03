@@ -83,7 +83,7 @@
                     v-for="doc in searchResults" 
                     :key="doc.id"
                     class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
-                    @click="navigateTo(`/documentation/${doc.id}`)"
+                    @click="navigateTo(`/documentation/read/${doc.id}`)"
                 >
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-3">
@@ -182,7 +182,7 @@
                     v-for="doc in documentations" 
                     :key="doc.id"
                     class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer group"
-                    @click="navigateTo(`/documentation/${doc.id}`)"
+                    @click="navigateTo(`/documentation/read/${doc.id}`)"
                 >
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-3">
