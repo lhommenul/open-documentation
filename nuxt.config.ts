@@ -6,6 +6,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   srcDir: 'app',
   modules: ['@nuxt/eslint', '@primevue/nuxt-module'],
+  devServer: {
+    port: 3030,
+    host: '0.0.0.0'
+  },
   vite: {    
     plugins: [      
       tailwindcss(),    
@@ -20,11 +24,4 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/main.css'],
   pages: true,
-  runtimeConfig: {
-    public: {
-      // Set defaults; override at runtime via env vars:
-      // NUXT_PUBLIC_OPEN_COMMUNICATION_API_URL, NUXT_PUBLIC_OPEN_COMMUNICATION_API_PORT
-      openCommunicationApiUrl: 'http:127.0.0.1:8080',
-    }
-  }
 })
