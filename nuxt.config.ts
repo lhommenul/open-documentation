@@ -24,4 +24,9 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/main.css'],
   pages: true,
+  runtimeConfig: {
+    clientId: process.env.CLIENT_ID,
+    openAuthenticationApiUrl: process.env.OPEN_AUTHENTIFICATION_API_URL,
+    redirectUrl: process.env.REDIRECT_URL,
+  },
 })

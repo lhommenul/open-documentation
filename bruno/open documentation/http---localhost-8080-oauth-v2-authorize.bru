@@ -1,0 +1,20 @@
+meta {
+  name: http://localhost:8080/oauth/v2/authorize
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:8080/oauth/v2/authorize?client_id=345365983130615811?redirect_uri=http://localhost:3030/login
+  body: none
+  auth: inherit
+}
+
+params:query {
+  client_id: 345365983130615811?redirect_uri=http://localhost:3030/login
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

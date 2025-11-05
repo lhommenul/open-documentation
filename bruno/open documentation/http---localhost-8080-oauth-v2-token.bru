@@ -1,0 +1,23 @@
+meta {
+  name: http://localhost:8080/oauth/v2/token
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/oauth/v2/token
+  body: formUrlEncoded
+  auth: inherit
+}
+
+body:form-urlencoded {
+  grant_type: authorization_code
+  client_id: 345365983130615811
+  code: Q9Vi8MjLlz1GFj9ttKikYC4zFnINc3vUujmp-WS6tGnpIhoIHw
+  redirect_uri: http://localhost:3030/auth/callback
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
