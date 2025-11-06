@@ -1,10 +1,10 @@
 import { defineEventHandler, readBody } from 'h3';
 import Note from '../../models/Note';
-import connectDB from '../../config/database';
+import { connectToDatabase } from '../../config/database';
+
 
 export default defineEventHandler(async (event) => {
   try {
-    await connectDB();
     
     const body = await readBody(event);
     const { userId, documentationId, stepId, content, color, position } = body;
@@ -15,6 +15,8 @@ export default defineEventHandler(async (event) => {
         message: 'userId, documentationId et content sont requis'
       };
     }
+
+    await connectToDatabase();
 
     const newNote = await Note.create({
       userId,

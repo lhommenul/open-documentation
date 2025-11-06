@@ -1,10 +1,9 @@
 import { defineEventHandler } from 'h3';
 import Note from '../../models/Note';
-import connectDB from '../../config/database';
+import { connectToDatabase } from '../../config/database';
 
 export default defineEventHandler(async (event) => {
   try {
-    await connectDB();
     
     const noteId = event.context.params?.id;
 
@@ -14,6 +13,8 @@ export default defineEventHandler(async (event) => {
         message: 'ID de la note requis'
       };
     }
+
+    await connectToDatabase();
 
     const deletedNote = await Note.findByIdAndDelete(noteId);
 

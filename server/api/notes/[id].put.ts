@@ -1,10 +1,9 @@
 import { defineEventHandler, readBody } from 'h3';
 import Note from '../../models/Note';
-import connectDB from '../../config/database';
+import { connectToDatabase } from '../../config/database';
 
 export default defineEventHandler(async (event) => {
   try {
-    await connectDB();
     
     const noteId = event.context.params?.id;
     const body = await readBody(event);
@@ -16,6 +15,8 @@ export default defineEventHandler(async (event) => {
         message: 'ID de la note requis'
       };
     }
+
+    await connectToDatabase();
 
     const updateData: any = {};
     if (content !== undefined) updateData.content = content;

@@ -1,11 +1,10 @@
 import { defineEventHandler, getQuery } from 'h3';
 import Note from '../../models/Note';
-import connectDB from '../../config/database';
+import { connectToDatabase } from '../../config/database';
 
 export default defineEventHandler(async (event) => {
   try {
-    await connectDB();
-    
+
     const query = getQuery(event);
     const { userId, documentationId, stepId } = query;
 
@@ -15,6 +14,8 @@ export default defineEventHandler(async (event) => {
         message: 'userId et documentationId sont requis'
       };
     }
+
+    await connectToDatabase();
 
     const filter: any = { 
       userId: userId as string, 
