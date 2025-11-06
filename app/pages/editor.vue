@@ -43,6 +43,7 @@
             ref="addMenuPanel" 
             :showCloseIcon="true"
             @show="focusSearchInput"
+            @hide="resetMenuState"
         >
             <div class="flex flex-col gap-3 min-w-[300px]">
                 <h3 class="font-semibold text-lg mb-2">Ajouter un élément</h3>
@@ -58,8 +59,8 @@
                 <Divider class="my-2" />
 
                 <div class="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
-                    <!-- Options principales -->
-                    <div v-if="searchQuery === ''">
+                    <!-- Options principales (affichées seulement si pas de recherche et pas dans un sous-menu) -->
+                    <div v-if="searchQuery === '' && !showPartsList && !showImageUpload">
                         <h4 class="text-sm font-semibold text-gray-600 mb-2">Actions</h4>
                         <Button
                             v-for="option in mainOptions"
@@ -72,15 +73,18 @@
                         />
                     </div>
 
-                    <!-- Liste des pièces disponibles -->
-                    <div v-if="showPartsList">
+                    <!-- Résultats de recherche ou liste des pièces disponibles -->
+                    <div v-if="showPartsList || (searchQuery !== '' && !showImageUpload)">
                         <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-sm font-semibold text-gray-600">Pièces disponibles</h4>
+                            <h4 class="text-sm font-semibold text-gray-600">
+                                {{ searchQuery !== '' ? 'Résultats de recherche' : 'Pièces disponibles' }}
+                            </h4>
                             <Button 
+                                v-if="showPartsList"
                                 icon="pi pi-arrow-left" 
                                 text 
                                 size="small"
-                                @click="showPartsList = false; searchQuery = ''"
+                                @click="resetMenuState"
                             />
                         </div>
                         
@@ -115,7 +119,7 @@
                                 icon="pi pi-arrow-left" 
                                 text 
                                 size="small"
-                                @click="showImageUpload = false; searchQuery = ''"
+                                @click="resetMenuState"
                             />
                         </div>
                         
@@ -231,6 +235,12 @@ function focusSearchInput() {
     });
 }
 
+function resetMenuState() {
+    searchQuery.value = '';
+    showPartsList.value = false;
+    showImageUpload.value = false;
+}
+
 function handleMainOptionClick(option: any) {
     searchQuery.value = '';
     
@@ -257,10 +267,8 @@ function addPartToContent(part: any) {
     // Ajouter la pièce au contenu (à la fin pour simplifier)
     content.value += ' ' + partSpan;
     
-    // Fermer le menu
+    // Fermer le menu (resetMenuState sera appelé automatiquement via @hide)
     addMenuPanel.value.hide();
-    showPartsList.value = false;
-    searchQuery.value = '';
     
     // Reconfigurer les listeners sur les nouveaux éléments
     nextTick(() => {
@@ -277,9 +285,8 @@ function handleImageUpload(event: any) {
     // Ici vous pouvez traiter l'upload de l'image
     // Par exemple, l'uploader vers un serveur et ajouter l'URL au contenu
     
+    // Fermer le menu (resetMenuState sera appelé automatiquement via @hide)
     addMenuPanel.value.hide();
-    showImageUpload.value = false;
-    searchQuery.value = '';
 }
 
 function listenToKeyboard() {
