@@ -247,7 +247,8 @@ function resetMenuState() {
     searchQuery.value = '';
     showPartsList.value = false;
     showImageUpload.value = false;
-    savedRange = null; // Réinitialiser la position sauvegardée
+    // Ne pas réinitialiser savedRange ici car il est utilisé dans addPartToContent
+    // Il sera réinitialisé après l'insertion de la pièce
 }
 
 function handleContentInput(event: Event) {
@@ -312,43 +313,60 @@ function addPartToContent(part: any) {
             // Focus sur l'éditeur
             contentRef.value.focus();
             
-            // Utiliser la position sauvegardée ou la sélection actuelle
-            const range = savedRange || window.getSelection()?.getRangeAt(0);
+            // Vérifier si savedRange est valide et pointe bien vers contentRef
+            let range = savedRange;
             
+            // Vérifier que le range est toujours valide et dans le bon conteneur
             if (range) {
-                const selection = window.getSelection();
-                if (selection) {
-                    // Restaurer la sélection
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                    
-                    // Supprimer le contenu sélectionné s'il y en a
-                    range.deleteContents();
-                    
-                    // Créer un élément temporaire pour parser le HTML
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = ' ' + partSpan + ' ';
-                    
-                    // Insérer les nœuds
-                    while (tempDiv.firstChild) {
-                        range.insertNode(tempDiv.lastChild!);
+                try {
+                    if (!contentRef.value.contains(range.startContainer)) {
+                        // Le range n'est plus dans l'éditeur, le réinitialiser
+                        range = null;
                     }
-                    
-                    // Mettre à jour le contenu ref
-                    content.value = contentRef.value.innerHTML;
-                    
-                    // Placer le curseur après l'élément inséré
-                    range.collapse(false);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                    
-                    // Réinitialiser savedRange
-                    savedRange = null;
+                } catch (e) {
+                    range = null;
                 }
-            } else {
-                // Fallback : ajouter à la fin si pas de sélection
-                contentRef.value.innerHTML += ' ' + partSpan + ' ';
+            }
+            
+            // Si pas de range valide, créer un range à la fin du contenu
+            if (!range) {
+                range = document.createRange();
+                range.selectNodeContents(contentRef.value);
+                range.collapse(false); // Collapse à la fin
+            }
+            
+            const selection = window.getSelection();
+            if (selection) {
+                // Restaurer la sélection
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                // Supprimer le contenu sélectionné s'il y en a
+                range.deleteContents();
+                
+                // Créer un élément temporaire pour parser le HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = ' ' + partSpan + ' ';
+                
+                // Créer un fragment pour insérer tous les nœuds d'un coup
+                const fragment = document.createDocumentFragment();
+                while (tempDiv.firstChild) {
+                    fragment.appendChild(tempDiv.firstChild);
+                }
+                
+                // Insérer le fragment à la position du curseur
+                range.insertNode(fragment);
+                
+                // Placer le curseur après l'élément inséré
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                // Mettre à jour le contenu ref
                 content.value = contentRef.value.innerHTML;
+                
+                // Réinitialiser savedRange
+                savedRange = null;
             }
             
             // Reconfigurer les listeners sur les nouveaux éléments
