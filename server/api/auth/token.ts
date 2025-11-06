@@ -30,6 +30,26 @@ export default defineEventHandler(async (event): Promise<TokenApiResponse> => {
             }
         );
 
+        // Stocker l'access token dans un cookie sécurisé httpOnly
+        setCookie(event, 'auth_token', tokenResponse.access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: tokenResponse.expires_in || 3600, // Utilise expires_in ou 1h par défaut
+            path: '/'
+        });
+
+        // Stocker le refresh token si présent
+        if (tokenResponse.refresh_token) {
+            setCookie(event, 'refresh_token', tokenResponse.refresh_token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24 * 30, // 30 jours
+                path: '/'
+            });
+        }
+
         return {
             success: true,
             data: tokenResponse

@@ -139,8 +139,3 @@ const handleToggle = async () => {
   }
 };
 </script>
-
-<style scoped>
-/* Styles personnalisés si nécessaire */
-</style>
-
