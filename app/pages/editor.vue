@@ -1,11 +1,14 @@
 <template>
     <div class="container mx-auto flex flex-col gap-4">
-        <p 
-            class="text-sm text-gray-500 shadow-md p-2 rounded-md mb-4 h-full" 
-            v-html="content"
+        <div 
+            contenteditable="true"
+            class="text-sm text-gray-800 shadow-md p-4 rounded-md mb-4 min-h-[400px] focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" 
             ref="contentRef"
+            @input="handleContentInput"
+            @blur="handleContentBlur"
+            @keydown="handleEditorKeydown"
         >
-        </p>
+        </div>
 
         <!-- Tooltip personnalisé pour les pièces -->
         <OverlayPanel ref="partTooltip" :showCloseIcon="false" class="part-tooltip">
@@ -136,8 +139,12 @@
         </OverlayPanel>
 
         <!-- Indicateur du raccourci "/" -->
-        <div class="fixed bottom-4 right-4 bg-gray-800 text-white px-3 py-2 rounded-md shadow-lg text-sm">
-            Appuyez sur <kbd class="bg-gray-700 px-2 py-1 rounded mx-1">/</kbd> pour ouvrir le menu
+        <div class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-3 rounded-md shadow-lg text-sm max-w-xs">
+            <div class="flex flex-col gap-1">
+                <div><strong>💡 Aide rapide :</strong></div>
+                <div>• Tapez directement dans l'éditeur</div>
+                <div>• Appuyez sur <kbd class="bg-gray-700 px-2 py-1 rounded mx-1">/</kbd> pour ajouter des éléments</div>
+            </div>
         </div>
     </div>
 </template>
@@ -150,7 +157,7 @@ import InputText from 'primevue/inputtext';
 import Divider from 'primevue/divider';
 import FileUpload from 'primevue/fileupload';
 
-const content = ref<string>('<span data-type="part" data-part-id="1" class="part-link cursor-pointer text-blue-600 hover:text-blue-800 underline">roue arrière</span>');
+const content = ref<string>('Commencez à taper votre documentation ici... Vous pouvez ajouter des pièces comme cette <span data-type="part" data-part-id="1" class="part-link cursor-pointer text-blue-600 hover:text-blue-800 underline">roue arrière</span> en appuyant sur "/" ou en cliquant dessus pour voir les détails.');
 
 const searchQuery = ref<string>('');
 const contentRef = ref<HTMLElement | null>(null);
@@ -160,6 +167,7 @@ const searchInput = ref();
 const selectedPart = ref<any>(null);
 const showPartsList = ref<boolean>(false);
 const showImageUpload = ref<boolean>(false);
+let savedRange: Range | null = null; // Pour sauvegarder la position du curseur
 
 // Données simulées des pièces
 const partsDatabase: Record<string, any> = {
@@ -239,6 +247,37 @@ function resetMenuState() {
     searchQuery.value = '';
     showPartsList.value = false;
     showImageUpload.value = false;
+    savedRange = null; // Réinitialiser la position sauvegardée
+}
+
+function handleContentInput(event: Event) {
+    const target = event.target as HTMLElement;
+    content.value = target.innerHTML;
+}
+
+function handleContentBlur() {
+    // Reconfigurer les listeners sur les éléments après l'édition
+    nextTick(() => {
+        setupPartListeners();
+    });
+}
+
+function handleEditorKeydown(event: KeyboardEvent) {
+    if (event.key === '/') {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Sauvegarder la position du curseur
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+            savedRange = selection.getRangeAt(0).cloneRange();
+            
+            // Ouvrir le menu à la position de l'éditeur
+            if (contentRef.value) {
+                addMenuPanel.value.show(event, contentRef.value);
+            }
+        }
+    }
 }
 
 function handleMainOptionClick(option: any) {
@@ -264,15 +303,57 @@ function addPartToContent(part: any) {
     // Créer le HTML pour la nouvelle pièce
     const partSpan = `<span data-type="part" data-part-id="${part.id}" class="part-link cursor-pointer text-blue-600 hover:text-blue-800 underline">${part.name}</span>`;
     
-    // Ajouter la pièce au contenu (à la fin pour simplifier)
-    content.value += ' ' + partSpan;
-    
-    // Fermer le menu (resetMenuState sera appelé automatiquement via @hide)
+    // Fermer le menu d'abord
     addMenuPanel.value.hide();
     
-    // Reconfigurer les listeners sur les nouveaux éléments
+    // Attendre que le menu se ferme, puis insérer à la position du curseur
     nextTick(() => {
-        setupPartListeners();
+        if (contentRef.value) {
+            // Focus sur l'éditeur
+            contentRef.value.focus();
+            
+            // Utiliser la position sauvegardée ou la sélection actuelle
+            const range = savedRange || window.getSelection()?.getRangeAt(0);
+            
+            if (range) {
+                const selection = window.getSelection();
+                if (selection) {
+                    // Restaurer la sélection
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    
+                    // Supprimer le contenu sélectionné s'il y en a
+                    range.deleteContents();
+                    
+                    // Créer un élément temporaire pour parser le HTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = ' ' + partSpan + ' ';
+                    
+                    // Insérer les nœuds
+                    while (tempDiv.firstChild) {
+                        range.insertNode(tempDiv.lastChild!);
+                    }
+                    
+                    // Mettre à jour le contenu ref
+                    content.value = contentRef.value.innerHTML;
+                    
+                    // Placer le curseur après l'élément inséré
+                    range.collapse(false);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    
+                    // Réinitialiser savedRange
+                    savedRange = null;
+                }
+            } else {
+                // Fallback : ajouter à la fin si pas de sélection
+                contentRef.value.innerHTML += ' ' + partSpan + ' ';
+                content.value = contentRef.value.innerHTML;
+            }
+            
+            // Reconfigurer les listeners sur les nouveaux éléments
+            setupPartListeners();
+        }
     });
     
     console.log('Pièce ajoutée:', part.name);
@@ -295,10 +376,17 @@ function listenToKeyboard() {
 
 function handleKeyboardEvent(event: KeyboardEvent) {
     if (event.key === '/') {
+        // Ne pas ouvrir le menu si l'utilisateur tape déjà dans le contenu
+        const target = event.target as HTMLElement;
+        if (target === contentRef.value || contentRef.value?.contains(target)) {
+            // L'utilisateur tape dans l'éditeur, laisser le "/" s'insérer normalement
+            return;
+        }
+        
         event.preventDefault();
         event.stopPropagation();
         // Use the event target or a fallback to the contentRef element
-        const targetElement = (event.target as HTMLElement) || contentRef.value;
+        const targetElement = target || contentRef.value;
         if (targetElement) {
             addMenuPanel.value.toggle({ currentTarget: targetElement } as any);
         }
@@ -371,6 +459,11 @@ onMounted(() => {
     console.log('Editor mounted');
     listenToKeyboard();
     
+    // Initialiser le contenu HTML
+    if (contentRef.value) {
+        contentRef.value.innerHTML = content.value;
+    }
+    
     nextTick(() => {
         setupPartListeners();
     });
@@ -382,6 +475,23 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Style de l'éditeur */
+[contenteditable] {
+    cursor: text;
+    line-height: 1.6;
+}
+
+[contenteditable]:empty:before {
+    content: "Commencez à taper...";
+    color: #9CA3AF;
+    font-style: italic;
+}
+
+[contenteditable]:focus {
+    cursor: text;
+}
+
+/* Style des liens vers les pièces */
 :deep(.part-link) {
     position: relative;
     transition: all 0.2s ease;
